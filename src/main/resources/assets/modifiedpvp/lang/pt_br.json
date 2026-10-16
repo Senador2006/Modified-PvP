@@ -12,6 +12,13 @@
 	"enchantment.modifiedpvp.push": "Empurrão",
 	"enchantment.modifiedpvp.grappling_hook": "Grappling Hook",
 	"enchantment.modifiedpvp.shotgun": "Escopeta",
+	"enchantment.modifiedpvp.kick": "Kick",
+	"enchantment.modifiedpvp.dashing": "Dashing",
+	"enchantment.modifiedpvp.jumping": "Jumping",
+	"enchantment.modifiedpvp.chain": "Chain",
+	"combat.modifiedpvp.cooldown.dash": "Dash",
+	"combat.modifiedpvp.cooldown.slide": "Deslize",
+	"combat.modifiedpvp.cooldown.jump": "Pulo",
 	"combat.modifiedpvp.heavy_charge": "Ataque pesado %s",
 	"combat.modifiedpvp.bundle_arrow": "Flecha: %s"
 }

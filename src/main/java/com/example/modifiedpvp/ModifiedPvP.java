@@ -2,6 +2,7 @@ package com.example.modifiedpvp;
 
 import com.example.modifiedpvp.combat.CombatActions;
 import com.example.modifiedpvp.combat.CrossbowFeatures;
+import com.example.modifiedpvp.combat.MaceChain;
 import com.example.modifiedpvp.combat.TridentEffects;
 import com.example.modifiedpvp.network.ModNetworking;
 
@@ -19,12 +20,14 @@ public class ModifiedPvP implements ModInitializer {
 	@Override
 	public void onInitialize() {
 		ModNetworking.register();
+		MaceChain.register();
 		ServerTickEvents.END_SERVER_TICK.register(server -> {
 			for (var player : server.getPlayerList().getPlayers()) {
 				CombatActions.tick(player);
 			}
 			TridentEffects.tick();
 			CrossbowFeatures.tickGrapples();
+			MaceChain.tick();
 		});
 		LOGGER.info("Modified PvP loaded");
 	}

@@ -4,6 +4,9 @@ import com.example.modifiedpvp.combat.CombatActions;
 import com.example.modifiedpvp.combat.CombatantAccess;
 import com.example.modifiedpvp.combat.CombatantState;
 
+import net.minecraft.server.level.ServerLevel;
+import net.minecraft.tags.DamageTypeTags;
+import net.minecraft.world.damagesource.DamageSource;
 import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.Pose;
 import net.minecraft.world.entity.player.Player;
@@ -25,6 +28,14 @@ public abstract class PlayerCombatMixin implements CombatantAccess {
 	@Override
 	public CombatantState modifiedpvp$state() {
 		return this.modifiedpvp$state;
+	}
+
+	@Inject(method = "isInvulnerableTo", at = @At("HEAD"), cancellable = true)
+	private void modifiedpvp$slideInvulnerability(ServerLevel level, DamageSource source, CallbackInfoReturnable<Boolean> callback) {
+		if (source.is(DamageTypeTags.BYPASSES_INVULNERABILITY) || !this.modifiedpvp$state.sliding()) {
+			return;
+		}
+		callback.setReturnValue(true);
 	}
 
 	@Inject(method = "getDesiredPose", at = @At("HEAD"), cancellable = true)

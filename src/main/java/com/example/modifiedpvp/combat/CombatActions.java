@@ -37,6 +37,12 @@ public final class CombatActions {
 			state.cancelHeavy();
 		}
 		ShieldFeatures.tick(player);
+		if (state.sliding() && player instanceof ServerPlayer serverPlayer) {
+			kickAlongSlide(serverPlayer, state);
+			if (serverPlayer.tickCount % 3 == 0) {
+				serverPlayer.level().sendParticles(ParticleTypes.END_ROD, serverPlayer.getX(), serverPlayer.getY(0.25), serverPlayer.getZ(), 1, 0.15, 0.02, 0.15, 0.0);
+			}
+		}
 	}
 
 	public static boolean tryDash(Player player) {
@@ -51,7 +57,9 @@ public final class CombatActions {
 		Vec3 direction = WeaponStats.horizontalLook(player);
 		Vec3 velocity = player.getDeltaMovement();
 		double lift = player.onGround() ? Math.max(velocity.y, 0.14) : velocity.y;
-		player.setDeltaMovement(direction.x * CombatRules.DASH_SPEED, lift, direction.z * CombatRules.DASH_SPEED);
+		int dashing = ModEnchantments.level(player.level(), ModEnchantments.DASHING, player.getItemBySlot(EquipmentSlot.LEGS));
+		double speed = CombatRules.DASH_SPEED + dashing * CombatRules.DASH_SPEED_PER_LEVEL;
+		player.setDeltaMovement(direction.x * speed, lift, direction.z * speed);
 		player.hurtMarked = true;
 		player.resetFallDistance();
 		player.applyPostImpulseGraceTime(8);
@@ -70,8 +78,10 @@ public final class CombatActions {
 		}
 
 		double jump = player.getAttributeValue(Attributes.JUMP_STRENGTH) + player.getJumpBoostPower();
+		int jumping = ModEnchantments.level(player.level(), ModEnchantments.JUMPING, player.getItemBySlot(EquipmentSlot.FEET));
+		double boost = jump * (CombatRules.DOUBLE_JUMP_MULTIPLIER + jumping * CombatRules.JUMPING_PER_LEVEL);
 		Vec3 velocity = player.getDeltaMovement();
-		player.setDeltaMovement(velocity.x, jump * 0.92, velocity.z);
+		player.setDeltaMovement(velocity.x, boost, velocity.z);
 		player.setOnGround(false);
 		player.hurtMarked = true;
 		player.resetFallDistance();
@@ -265,6 +275,34 @@ public final class CombatActions {
 		Weapon weapon = axe.get(DataComponents.WEAPON);
 		float seconds = weapon != null ? weapon.disableBlockingForSeconds() : Weapon.AXE_DISABLES_BLOCKING_FOR_SECONDS;
 		blocks.disable(player.level(), target, seconds, blocking);
+	}
+
+	private static void kickAlongSlide(ServerPlayer player, CombatantState state) {
+		int kick = ModEnchantments.level(player.level(), ModEnchantments.KICK, player.getItemBySlot(EquipmentSlot.LEGS));
+		if (kick <= 0) {
+			return;
+		}
+
+		ServerLevel level = player.level();
+		AABB box = player.getBoundingBox().inflate(0.5, 0.35, 0.5);
+		double lift = CombatRules.KICK_LIFT + kick * CombatRules.KICK_LIFT_PER_LEVEL;
+		double shove = CombatRules.KICK_SHOVE + kick * CombatRules.KICK_SHOVE_PER_LEVEL;
+		boolean hit = false;
+		for (Entity entity : level.getEntities(player, box, candidate -> canHit(player, candidate))) {
+			if (!(entity instanceof LivingEntity living) || !state.markSlideHit(living.getUUID())) {
+				continue;
+			}
+			Vec3 motion = living.getDeltaMovement();
+			living.setDeltaMovement(motion.x * 0.35 + state.slideX() * shove, Math.max(0.0, motion.y) + lift, motion.z * 0.35 + state.slideZ() * shove);
+			living.setOnGround(false);
+			living.hurtMarked = true;
+			living.resetFallDistance();
+			level.sendParticles(ParticleTypes.CLOUD, living.getX(), living.getY(0.2), living.getZ(), 8, 0.2, 0.1, 0.2, 0.02);
+			hit = true;
+		}
+		if (hit) {
+			play(player, SoundEvents.PLAYER_ATTACK_KNOCKBACK, 0.8F, 0.7F + kick * 0.08F);
+		}
 	}
 
 	private static LivingEntity closestInLook(Player player, double range, double minDot) {

@@ -12,6 +12,13 @@
 	"enchantment.modifiedpvp.push": "Push",
 	"enchantment.modifiedpvp.grappling_hook": "Grappling Hook",
 	"enchantment.modifiedpvp.shotgun": "Shotgun",
+	"enchantment.modifiedpvp.kick": "Kick",
+	"enchantment.modifiedpvp.dashing": "Dashing",
+	"enchantment.modifiedpvp.jumping": "Jumping",
+	"enchantment.modifiedpvp.chain": "Chain",
+	"combat.modifiedpvp.cooldown.dash": "Dash",
+	"combat.modifiedpvp.cooldown.slide": "Slide",
+	"combat.modifiedpvp.cooldown.jump": "Jump",
 	"combat.modifiedpvp.heavy_charge": "Heavy attack %s",
 	"combat.modifiedpvp.bundle_arrow": "Arrow: %s"
 }

@@ -1,5 +1,9 @@
 package com.example.modifiedpvp.combat;
 
+import java.util.HashSet;
+import java.util.Set;
+import java.util.UUID;
+
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.phys.Vec3;
 
@@ -14,6 +18,7 @@ public final class CombatantState {
 	private int slideTicks;
 	private double slideX;
 	private double slideZ;
+	private final Set<UUID> slideHits = new HashSet<>();
 	private boolean heavyCharging;
 	private long heavyStartedAt;
 
@@ -58,6 +63,10 @@ public final class CombatantState {
 		return this.dashCooldown <= 0;
 	}
 
+	public int dashCooldown() {
+		return this.dashCooldown;
+	}
+
 	public void startDashCooldown() {
 		this.dashCooldown = CombatRules.DASH_COOLDOWN;
 	}
@@ -79,11 +88,16 @@ public final class CombatantState {
 		return this.sliding;
 	}
 
+	public int slideCooldown() {
+		return this.slideCooldown;
+	}
+
 	public void startSlide(Vec3 direction) {
 		this.sliding = true;
 		this.slideTicks = 0;
 		this.slideX = direction.x;
 		this.slideZ = direction.z;
+		this.slideHits.clear();
 	}
 
 	public void stopSlide() {
@@ -93,6 +107,19 @@ public final class CombatantState {
 		this.sliding = false;
 		this.slideTicks = 0;
 		this.slideCooldown = CombatRules.SLIDE_COOLDOWN;
+		this.slideHits.clear();
+	}
+
+	public double slideX() {
+		return this.slideX;
+	}
+
+	public double slideZ() {
+		return this.slideZ;
+	}
+
+	public boolean markSlideHit(UUID id) {
+		return this.slideHits.add(id);
 	}
 
 	public boolean thrustReady() {

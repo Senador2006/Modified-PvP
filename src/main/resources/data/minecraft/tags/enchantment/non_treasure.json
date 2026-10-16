@@ -7,6 +7,10 @@
 		"modifiedpvp:drain",
 		"modifiedpvp:push",
 		"modifiedpvp:grappling_hook",
-		"modifiedpvp:shotgun"
+		"modifiedpvp:shotgun",
+		"modifiedpvp:kick",
+		"modifiedpvp:dashing",
+		"modifiedpvp:jumping",
+		"modifiedpvp:chain"
 	]
 }

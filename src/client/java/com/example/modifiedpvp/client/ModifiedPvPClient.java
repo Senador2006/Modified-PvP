@@ -7,6 +7,7 @@ public class ModifiedPvPClient implements ClientModInitializer {
 	@Override
 	public void onInitializeClient() {
 		ModKeybinds.register();
+		MovementCooldownHud.register();
 		ClientTickEvents.END_CLIENT_TICK.register(CombatClient::tick);
 	}
 }

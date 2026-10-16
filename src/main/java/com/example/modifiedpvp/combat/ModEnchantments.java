@@ -18,6 +18,10 @@ public final class ModEnchantments {
 	public static final ResourceKey<Enchantment> PUSH = key("push");
 	public static final ResourceKey<Enchantment> GRAPPLING_HOOK = key("grappling_hook");
 	public static final ResourceKey<Enchantment> SHOTGUN = key("shotgun");
+	public static final ResourceKey<Enchantment> KICK = key("kick");
+	public static final ResourceKey<Enchantment> DASHING = key("dashing");
+	public static final ResourceKey<Enchantment> JUMPING = key("jumping");
+	public static final ResourceKey<Enchantment> CHAIN = key("chain");
 
 	private ModEnchantments() {
 	}

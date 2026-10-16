@@ -12,7 +12,9 @@
 		"CrossbowItemMixin",
 		"ProjectileWeaponInvoker",
 		"ProjectileGrappleMixin",
-		"FireworkRocketMixin"
+		"FireworkRocketMixin",
+		"DisplayInvoker",
+		"BlockDisplayInvoker"
 	],
 	"injectors": {
 		"defaultRequire": 1

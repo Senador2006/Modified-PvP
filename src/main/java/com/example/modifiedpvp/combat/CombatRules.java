@@ -3,6 +3,15 @@ package com.example.modifiedpvp.combat;
 public final class CombatRules {
 	public static final int DASH_COOLDOWN = 16;
 	public static final double DASH_SPEED = 0.92;
+	public static final double DASH_SPEED_PER_LEVEL = 0.42;
+
+	public static final double DOUBLE_JUMP_MULTIPLIER = 0.92;
+	public static final double JUMPING_PER_LEVEL = 0.30;
+
+	public static final double KICK_LIFT = 0.46;
+	public static final double KICK_LIFT_PER_LEVEL = 0.26;
+	public static final double KICK_SHOVE = 0.18;
+	public static final double KICK_SHOVE_PER_LEVEL = 0.06;
 
 	public static final int SLIDE_COOLDOWN = 24;
 	public static final int SLIDE_MAX_TICKS = 16;
@@ -39,6 +48,19 @@ public final class CombatRules {
 	public static final int SHOTGUN_BASE_PROJECTILES = 2;
 	public static final double GRAPPLE_SPEED = 1.05;
 	public static final int GRAPPLE_MAX_TICKS = 40;
+
+	public static final double MACE_CHAIN_BASE_RANGE = 10.0;
+	public static final double MACE_CHAIN_RANGE_PER_LEVEL = 4.0;
+	public static final double MACE_CHAIN_THROW_SPEED = 1.8;
+	public static final double MACE_CHAIN_RETURN_SPEED = 2.2;
+	public static final double MACE_CHAIN_GRAVITY = 0.025;
+	public static final int MACE_CHAIN_MAX_TICKS = 100;
+	public static final int MACE_CHAIN_COOLDOWN = 30;
+	public static final float MACE_CHAIN_DAMAGE_RATIO = 0.5F;
+	public static final double MACE_SHOCKWAVE_RADIUS = 3.5;
+	public static final double MACE_SHOCKWAVE_STRENGTH = 1.1;
+	public static final double MACE_SHOCKWAVE_LIFT = 0.42;
+	public static final double MACE_SHOCKWAVE_SELF_STRENGTH = 1.2;
 
 	private CombatRules() {
 	}
