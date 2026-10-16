@@ -1,0 +1,17 @@
+{
+	"key.category.modifiedpvp.combat": "Modified PvP",
+	"key.modifiedpvp.dash": "Dash",
+	"key.modifiedpvp.slide": "Slide",
+	"key.modifiedpvp.thrust": "Sword Thrust",
+	"key.modifiedpvp.cycle_arrow": "Cycle Bundle Arrow",
+	"enchantment.modifiedpvp.range": "Range",
+	"enchantment.modifiedpvp.double_hit": "Double Hit",
+	"enchantment.modifiedpvp.slice": "Slice",
+	"enchantment.modifiedpvp.double_arrow": "Double Arrow",
+	"enchantment.modifiedpvp.drain": "Drain",
+	"enchantment.modifiedpvp.push": "Push",
+	"enchantment.modifiedpvp.grappling_hook": "Grappling Hook",
+	"enchantment.modifiedpvp.shotgun": "Shotgun",
+	"combat.modifiedpvp.heavy_charge": "Heavy attack %s",
+	"combat.modifiedpvp.bundle_arrow": "Arrow: %s"
+}

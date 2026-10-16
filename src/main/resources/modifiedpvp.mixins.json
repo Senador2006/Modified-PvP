@@ -1,0 +1,23 @@
+{
+	"required": true,
+	"package": "com.example.modifiedpvp.mixin",
+	"compatibilityLevel": "JAVA_21",
+	"mixins": [
+		"PlayerCombatMixin",
+		"PlayerProjectileMixin",
+		"BowItemMixin",
+		"AbstractArrowMixin",
+		"ThrownTridentMixin",
+		"LivingEntityStunMixin",
+		"CrossbowItemMixin",
+		"ProjectileWeaponInvoker",
+		"ProjectileGrappleMixin",
+		"FireworkRocketMixin"
+	],
+	"injectors": {
+		"defaultRequire": 1
+	},
+	"overwrites": {
+		"requireAnnotations": true
+	}
+}

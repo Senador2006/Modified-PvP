@@ -1,0 +1,38 @@
+{
+	"schemaVersion": 1,
+	"id": "modifiedpvp",
+	"version": "${version}",
+	"name": "Modified PvP",
+	"description": "Movimentação e ataques extras para PvP: dash, pulo duplo, deslize, estocada, duas espadas, golpe pesado de machado, arco, tridente, escudo e besta.",
+	"authors": [
+		"Me!"
+	],
+	"contact": {
+		"homepage": "https://fabricmc.net/",
+		"sources": "https://github.com/FabricMC/fabric-example-mod"
+	},
+	"license": "CC0-1.0",
+	"icon": "assets/modifiedpvp/icon.png",
+	"environment": "*",
+	"entrypoints": {
+		"main": [
+			"com.example.modifiedpvp.ModifiedPvP"
+		],
+		"client": [
+			"com.example.modifiedpvp.client.ModifiedPvPClient"
+		]
+	},
+	"mixins": [
+		"modifiedpvp.mixins.json",
+		{
+			"config": "modifiedpvp.client.mixins.json",
+			"environment": "client"
+		}
+	],
+	"depends": {
+		"fabricloader": ">=0.19.5",
+		"minecraft": "~1.21.11",
+		"java": ">=21",
+		"fabric-api": "*"
+	}
+}

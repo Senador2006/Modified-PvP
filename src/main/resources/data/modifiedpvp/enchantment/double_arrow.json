@@ -1,0 +1,47 @@
+{
+	"anvil_cost": 4,
+	"description": {
+		"translate": "enchantment.modifiedpvp.double_arrow"
+	},
+	"effects": {
+		"minecraft:projectile_count": [
+			{
+				"effect": {
+					"type": "minecraft:add",
+					"value": {
+						"type": "minecraft:linear",
+						"base": 1.0,
+						"per_level_above_first": 0.0
+					}
+				}
+			}
+		],
+		"minecraft:projectile_spread": [
+			{
+				"effect": {
+					"type": "minecraft:add",
+					"value": {
+						"type": "minecraft:linear",
+						"base": 3.0,
+						"per_level_above_first": 0.0
+					}
+				}
+			}
+		]
+	},
+	"max_cost": {
+		"base": 50,
+		"per_level_above_first": 0
+	},
+	"max_level": 1,
+	"min_cost": {
+		"base": 20,
+		"per_level_above_first": 0
+	},
+	"primary_items": "#minecraft:enchantable/bow",
+	"slots": [
+		"mainhand"
+	],
+	"supported_items": "#minecraft:enchantable/bow",
+	"weight": 2
+}

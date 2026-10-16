@@ -1,0 +1,11 @@
+{
+	"required": true,
+	"package": "com.example.modifiedpvp.client.mixin",
+	"compatibilityLevel": "JAVA_21",
+	"client": [
+		"UseDurationMixin"
+	],
+	"injectors": {
+		"defaultRequire": 1
+	}
+}

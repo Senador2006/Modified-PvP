@@ -1,0 +1,17 @@
+{
+	"key.category.modifiedpvp.combat": "Modified PvP",
+	"key.modifiedpvp.dash": "Dash",
+	"key.modifiedpvp.slide": "Deslize",
+	"key.modifiedpvp.thrust": "Estocada",
+	"key.modifiedpvp.cycle_arrow": "Trocar flecha do bundle",
+	"enchantment.modifiedpvp.range": "Alcance",
+	"enchantment.modifiedpvp.double_hit": "Golpe Duplo",
+	"enchantment.modifiedpvp.slice": "Corte",
+	"enchantment.modifiedpvp.double_arrow": "Flecha Dupla",
+	"enchantment.modifiedpvp.drain": "Drenar",
+	"enchantment.modifiedpvp.push": "Empurrão",
+	"enchantment.modifiedpvp.grappling_hook": "Grappling Hook",
+	"enchantment.modifiedpvp.shotgun": "Escopeta",
+	"combat.modifiedpvp.heavy_charge": "Ataque pesado %s",
+	"combat.modifiedpvp.bundle_arrow": "Flecha: %s"
+}
