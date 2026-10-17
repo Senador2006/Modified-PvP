@@ -4,7 +4,7 @@ Movimentação e armas extras para PvP no Minecraft **1.21.11**, feito para Fabr
 
 O cliente prevê o movimento. O dano, o empurrão e os projéteis só valem no servidor.
 
-[![Versão](https://img.shields.io/badge/vers%C3%A3o-1.1.0-4c8bf5?style=flat-square)](releases/modifiedpvp-1.1.0.jar)
+[![Versão](https://img.shields.io/badge/vers%C3%A3o-1.1.1-4c8bf5?style=flat-square)](releases/modifiedpvp-1.1.1.jar)
 [![Minecraft](https://img.shields.io/badge/Minecraft-1.21.11-62b47a?style=flat-square)](https://fabricmc.net/develop/)
 [![Fabric Loader](https://img.shields.io/badge/Fabric_Loader-0.19.5+-dbd0b4?style=flat-square)](https://fabricmc.net/)
 [![Fabric API](https://img.shields.io/badge/Fabric_API-0.141.6-c8a2c8?style=flat-square)](https://modrinth.com/mod/fabric-api)
@@ -13,13 +13,13 @@ O cliente prevê o movimento. O dano, o empurrão e os projéteis só valem no s
 
 ## Download
 
-**[modifiedpvp-1.1.0.jar](releases/modifiedpvp-1.1.0.jar)**
+**[modifiedpvp-1.1.1.jar](releases/modifiedpvp-1.1.1.jar)**
 
 ## Instalação
 
 1. Instale o [Fabric Loader](https://fabricmc.net/use/installer/) para o Minecraft 1.21.11.
 2. Baixe a [Fabric API](https://modrinth.com/mod/fabric-api) para a 1.21.11.
-3. Coloque a Fabric API e o `modifiedpvp-1.1.0.jar` na pasta `mods` do Minecraft.
+3. Coloque a Fabric API e o `modifiedpvp-1.1.1.jar` na pasta `mods` do Minecraft.
 4. Em servidor, o mod precisa estar no servidor **e** em todos os clientes.
 
 ## Requisitos
@@ -93,26 +93,40 @@ O **Grappling Hook** puxa você até o ponto em que a flecha ou o fogo de artif�
 
 ## Encantamentos
 
-Todos entram na mesa de encantamentos, em saque e em trocas com aldeões.
-
 | Encantamento | Item | Nível | Efeito |
 | --- | --- | --- | --- |
 | Alcance | Espada | III | Aumenta o alcance da estocada. |
 | Golpe Duplo | Espada | III | Com duas espadas, ataca mais rápido e a mão secundária causa um pouco mais de dano. |
 | Corte | Machado | III | Aumenta o dano do ataque pesado. |
-| Chain | Maça | III | Aumenta o alcance da corrente em 4 blocos por nível (até 22 blocos). |
-| Flecha Dupla | Arco | I | Dispara duas flechas. A segunda também causa dano. Gasta uma flecha. |
-| Drenar | Tridente | I | O tridente lançado apaga a água e as colunas de bolhas que atravessa. Não combina com Impulso. |
-| Empurrão | Escudo | III | Aumenta a força do empurrão com o escudo erguido. |
-| Grappling Hook | Besta | I | Puxa você até o impacto do tiro. |
-| Escopeta | Besta | III | Nível I, II e III carregam 2, 3 e 4 munições. |
 | Kick | Calça | III | O deslize chuta para cima e para frente quem estiver no caminho. |
 | Dashing | Calça | I | Aumenta a velocidade do dash. |
 | Jumping | Bota | III | Aumenta a altura do pulo duplo. |
+| Empurrão | Escudo | III | Aumenta a força do empurrão com o escudo erguido. |
+| Chain | Maça | III | Aumenta o alcance da corrente em 4 blocos por nível (até 22 blocos). |
+| Flecha Dupla | Arco | I | Dispara duas flechas. A segunda também causa dano. Gasta uma flecha. |
+| Grappling Hook | Besta | I | Puxa você até o impacto do tiro. |
+| Escopeta | Besta | III | Nível I, II e III carregam 2, 3 e 4 munições. |
+| Drenar | Tridente | I | O tridente lançado apaga a água e as colunas de bolhas que atravessa. Não combina com Impulso. |
 
 Escopeta e Grappling Hook não combinam entre si, nem com Tiro Múltiplo ou Perfuração.
 
 Lealdade continua sendo o encantamento vanilla. O mod só muda o que acontece no acerto.
+
+### Onde conseguir
+
+| Encantamentos | Onde |
+| --- | --- |
+| Alcance, Golpe Duplo, Corte, Kick, Dashing, Jumping, Empurrão | Mesa de encantamentos e aldeões bibliotecários. Também aparecem em baús com saque encantado aleatório, como os do vanilla. |
+| Chain | Só nível I, como livro, nos cofres ominosos da Trial Chamber. Tem a mesma chance do livro de Wind Burst. Os níveis II e III saem juntando livros na bigorna. |
+| Flecha Dupla | Baús da biblioteca das Strongholds. Todo baú tem um livro garantido. |
+| Grappling Hook, Escopeta | Baú dos Postos Avançados de Saqueadores, 50% de chance de um livro. |
+| Drenar | Baús das Ruínas Oceânicas: 35% nas grandes, 15% nas pequenas. |
+
+Os encantamentos de maça, arco, besta e tridente não saem na mesa nem com aldeões.
+
+### Afogados
+
+Afogados que nascem com tridente deixam cair o tridente em 70% das mortes (no vanilla são 8,5%).
 
 ## Compilando
 
@@ -123,6 +137,11 @@ Lealdade continua sendo o encantamento vanilla. O mod só muda o que acontece no
 O jar sai em `build/libs/modifiedpvp-<versão>.jar`.
 
 ## Novidades
+
+### 1.1.1
+
+- Cada encantamento agora tem um lugar próprio para ser encontrado (veja "Onde conseguir").
+- Afogados deixam cair o tridente em 70% das mortes.
 
 ### 1.1.0
 

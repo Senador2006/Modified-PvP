@@ -4,6 +4,7 @@ import com.example.modifiedpvp.combat.CombatActions;
 import com.example.modifiedpvp.combat.CrossbowFeatures;
 import com.example.modifiedpvp.combat.MaceChain;
 import com.example.modifiedpvp.combat.TridentEffects;
+import com.example.modifiedpvp.loot.ModLoot;
 import com.example.modifiedpvp.network.ModNetworking;
 
 import net.fabricmc.api.ModInitializer;
@@ -21,6 +22,7 @@ public class ModifiedPvP implements ModInitializer {
 	public void onInitialize() {
 		ModNetworking.register();
 		MaceChain.register();
+		ModLoot.register();
 		ServerTickEvents.END_SERVER_TICK.register(server -> {
 			for (var player : server.getPlayerList().getPlayers()) {
 				CombatActions.tick(player);

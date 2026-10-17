@@ -14,7 +14,8 @@
 		"ProjectileGrappleMixin",
 		"FireworkRocketMixin",
 		"DisplayInvoker",
-		"BlockDisplayInvoker"
+		"BlockDisplayInvoker",
+		"DrownedTridentMixin"
 	],
 	"injectors": {
 		"defaultRequire": 1

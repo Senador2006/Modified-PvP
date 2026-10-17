@@ -39,6 +39,7 @@ public final class CombatRules {
 	public static final int LOYALTY_STUN_TICKS_PER_LEVEL = 8;
 	public static final double LOYALTY_PULL_SPEED = 0.28;
 	public static final double LOYALTY_PULL_SPEED_PER_LEVEL = 0.12;
+	public static final float DROWNED_TRIDENT_DROP_CHANCE = 0.7F;
 
 	public static final int SHIELD_PUSH_COOLDOWN = 10;
 	public static final double SHIELD_PUSH_RANGE = 2.75;

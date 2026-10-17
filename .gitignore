@@ -41,3 +41,4 @@ replay_*.log
 
 # jar publicado no repositório
 !releases/modifiedpvp-*.jar
+modifiedpvp-1.1.1-sources.jar
