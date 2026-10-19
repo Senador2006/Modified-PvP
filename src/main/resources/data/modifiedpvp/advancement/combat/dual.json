@@ -1,0 +1,27 @@
+{
+  "parent": "modifiedpvp:combat/root",
+  "criteria": {
+    "unlock": {
+      "trigger": "minecraft:impossible"
+    }
+  },
+  "display": {
+    "description": {
+      "translate": "advancements.modifiedpvp.combat.dual.description"
+    },
+    "frame": "goal",
+    "icon": {
+      "count": 1,
+      "id": "minecraft:diamond_sword"
+    },
+    "title": {
+      "translate": "advancements.modifiedpvp.combat.dual.title"
+    }
+  },
+  "requirements": [
+    [
+      "unlock"
+    ]
+  ],
+  "sends_telemetry_event": false
+}

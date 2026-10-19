@@ -15,7 +15,8 @@
 		"FireworkRocketMixin",
 		"DisplayInvoker",
 		"BlockDisplayInvoker",
-		"DrownedTridentMixin"
+		"DrownedTridentMixin",
+		"MaceItemMixin"
 	],
 	"injectors": {
 		"defaultRequire": 1

@@ -1,6 +1,7 @@
 package com.example.modifiedpvp;
 
 import com.example.modifiedpvp.combat.CombatActions;
+import com.example.modifiedpvp.combat.ComboSpecials;
 import com.example.modifiedpvp.combat.CrossbowFeatures;
 import com.example.modifiedpvp.combat.MaceChain;
 import com.example.modifiedpvp.combat.TridentEffects;
@@ -23,10 +24,13 @@ public class ModifiedPvP implements ModInitializer {
 		ModNetworking.register();
 		MaceChain.register();
 		ModLoot.register();
+		ComboSpecials.register();
 		ServerTickEvents.END_SERVER_TICK.register(server -> {
 			for (var player : server.getPlayerList().getPlayers()) {
 				CombatActions.tick(player);
+				ComboSpecials.tickPlayer(player);
 			}
+			ComboSpecials.tick();
 			TridentEffects.tick();
 			CrossbowFeatures.tickGrapples();
 			MaceChain.tick();

@@ -1,0 +1,27 @@
+{
+  "parent": "modifiedpvp:combat/root",
+  "criteria": {
+    "unlock": {
+      "trigger": "minecraft:impossible"
+    }
+  },
+  "display": {
+    "description": {
+      "translate": "advancements.modifiedpvp.combat.bow.description"
+    },
+    "frame": "goal",
+    "icon": {
+      "count": 1,
+      "id": "minecraft:bow"
+    },
+    "title": {
+      "translate": "advancements.modifiedpvp.combat.bow.title"
+    }
+  },
+  "requirements": [
+    [
+      "unlock"
+    ]
+  ],
+  "sends_telemetry_event": false
+}

@@ -17,6 +17,7 @@ import net.minecraft.world.effect.MobEffects;
 import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.EquipmentSlot;
 import net.minecraft.world.entity.LivingEntity;
+import net.minecraft.world.entity.Mob;
 import net.minecraft.world.entity.ai.attributes.Attributes;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.item.ItemStack;
@@ -144,6 +145,9 @@ public final class CombatActions {
 			if (target != null) {
 				float damage = weaponDamage(serverPlayer, sword, target, strength, 1.2F);
 				if (hurtWithWeapon(serverPlayer, target, sword, damage, EquipmentSlot.MAINHAND, 0.35)) {
+					if (strength >= CombatRules.COMBO_MIN_STRENGTH && (target instanceof Mob || target instanceof Player)) {
+						ComboSpecials.onMeleeHit(serverPlayer);
+					}
 					play(serverPlayer, SoundEvents.PLAYER_ATTACK_KNOCKBACK, 1.0F, 0.9F);
 					serverPlayer.level().sendParticles(ParticleTypes.CRIT, target.getX(), target.getY(0.6), target.getZ(), 8, 0.2, 0.2, 0.2, 0.05);
 				}
@@ -185,22 +189,32 @@ public final class CombatActions {
 
 		float ratio = Math.min(1.0F, (chargedTicks - CombatRules.HEAVY_MIN_TICKS) / (float) (CombatRules.HEAVY_FULL_TICKS - CombatRules.HEAVY_MIN_TICKS));
 		int slice = ModEnchantments.level(serverPlayer.level(), ModEnchantments.SLICE, axe);
+		boolean empowered = ComboSpecials.hasAxeEmpower(serverPlayer);
 		List<LivingEntity> targets = new ArrayList<>(targetsInLook(serverPlayer, CombatRules.HEAVY_RANGE, 0.2));
 		targets.sort(Comparator.comparingDouble(serverPlayer::distanceToSqr));
 		int hits = 0;
+		boolean comboHit = false;
 		for (LivingEntity target : targets) {
 			if (hits >= 3) {
 				break;
 			}
 			float falloff = hits == 0 ? 1.0F : 0.72F;
 			float multiplier = (0.75F + ratio * 0.85F) * (1.0F + 0.22F * slice) * falloff;
+			if (empowered) {
+				multiplier *= CombatRules.AXE_EMPOWER_DAMAGE;
+			}
 			float damage = weaponDamage(serverPlayer, axe, target, 1.0F, multiplier);
 			disarmShield(serverPlayer, target, axe);
 			if (hurtWithWeapon(serverPlayer, target, axe, damage, EquipmentSlot.MAINHAND, 0.45 + ratio * 0.55)) {
-				if (ratio > 0.65F) {
+				if (empowered) {
+					ComboSpecials.stun(target, serverPlayer, CombatRules.AXE_STUN_TICKS);
+				} else if (ratio > 0.65F) {
 					target.addEffect(new MobEffectInstance(MobEffects.SLOWNESS, 24, 0), serverPlayer);
 				}
 				hits++;
+				if (target instanceof Mob || target instanceof Player) {
+					comboHit = true;
+				}
 			}
 		}
 
@@ -209,6 +223,10 @@ public final class CombatActions {
 		play(serverPlayer, SoundEvents.PLAYER_ATTACK_STRONG, 1.0F, 0.75F + ratio * 0.2F);
 		serverPlayer.level().sendParticles(ParticleTypes.SWEEP_ATTACK, serverPlayer.getX(), serverPlayer.getY(0.6), serverPlayer.getZ(), 1, 0.0, 0.0, 0.0, 0.0);
 		if (hits > 0) {
+			if (empowered) {
+				ComboSpecials.consumeAxeEmpower(serverPlayer);
+			}
+			ComboSpecials.onHeavySuccess(serverPlayer, comboHit);
 			serverPlayer.level().sendParticles(ParticleTypes.CRIT, serverPlayer.getX(), serverPlayer.getY(0.7), serverPlayer.getZ(), 12, 0.6, 0.3, 0.6, 0.08);
 		}
 	}

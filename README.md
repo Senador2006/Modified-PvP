@@ -2,7 +2,7 @@
 
 Movimentação e armas extras para PvP no Minecraft **1.21.11**, feito para Fabric.
 
-O cliente prevê o movimento. O dano, o empurrão e os projéteis só valem no servidor.
+O cliente prevê o movimento. O dano, o empurrão, os projéteis e os especiais de combo só valem no servidor.
 
 [![Versão](https://img.shields.io/badge/vers%C3%A3o-1.1.2-4c8bf5?style=flat-square)](releases/modifiedpvp-1.1.2.jar)
 [![Minecraft](https://img.shields.io/badge/Minecraft-1.21.11-62b47a?style=flat-square)](https://fabricmc.net/develop/)
@@ -91,6 +91,24 @@ Uma carga da **Escopeta** coloca várias munições de uma vez e dispara todas e
 
 O **Grappling Hook** puxa você até o ponto em que a flecha ou o fogo de artifício acerta.
 
+## Especiais
+
+Cada arma tem um combo na aba **Especiais** dos advancements. O efeito só existe depois de desbloquear o advancement. A barra de ação mostra o progresso do objetivo e, depois, a contagem do combo.
+
+O golpe precisa acertar um mob ou um jogador. Na espada e nas duas espadas, o golpe tem que estar carregado. Levar dano zera os combos que podem ser interrompidos. Um bloqueio completo não conta como dano. Nos combos sem interrupção, você não sofre dano entre os golpes.
+
+Se passar tempo demais entre um acerto e o outro, a sequência recomeça: 2 s na espada e nas duas espadas, 5 s no machado e no escudo, 4 s no arco, 8 s na maça e 12 s no tridente.
+
+| Arma | Desbloqueio | Combo | Efeito | Recarga | Interrompe |
+| --- | --- | --- | --- | --- | --- |
+| Espada | Mate 50 mobs com a espada | 5 golpes | Acerto crítico automático por 15 s | 60 s | Sim |
+| Duas espadas | Mate 50 mobs com as duas na mão | 10 golpes | Velocidade II e Força II por 90 s | 120 s | Sim |
+| Machado | Acerte 20 ataques pesados | 3 ataques pesados | O próximo pesado causa o dobro de dano e atordoa por 3 s | 50 s | Não |
+| Arco | Acerte 10 mobs diferentes | 7 acertos | Disparos com força máxima, sem puxada, por 10 s | 30 s | Sim |
+| Tridente | Puxe um afogado com Lealdade | 5 puxadas | O último alvo recebe Lentidão III por 20 s | 60 s | Não |
+| Escudo | Bloqueie 30 golpes | 3 bloqueios | O próximo bloqueio devolve metade do dano e lança o atacante para cima | 45 s | Sim |
+| Maça | Acerte 10 arremessos da corrente | 3 acertos, na queda ou na corrente | O próximo golpe puxa os alvos e aplica Lentidão II por 4 s | 70 s | Não |
+
 ## Encantamentos
 
 | Encantamento | Item | Nível | Efeito |
@@ -137,6 +155,10 @@ Afogados que nascem com tridente deixam cair o tridente em 70% das mortes (no va
 O jar sai em `build/libs/modifiedpvp-<versão>.jar`.
 
 ## Novidades
+
+### Próxima versão
+
+- Especiais de combo para espada, duas espadas, machado, arco, tridente, escudo e maça. Cada um abre na aba Especiais dos advancements.
 
 ### 1.1.2
 

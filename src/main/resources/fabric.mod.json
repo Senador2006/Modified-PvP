@@ -3,7 +3,7 @@
 	"id": "modifiedpvp",
 	"version": "${version}",
 	"name": "Modified PvP",
-	"description": "Movimentação e ataques extras para PvP: dash, pulo duplo, deslize, estocada, duas espadas, golpe pesado de machado, arco, tridente, escudo, besta e maça acorrentada.",
+	"description": "Movimentação e ataques extras para PvP: dash, pulo duplo, deslize, estocada, duas espadas, golpe pesado de machado, arco, tridente, escudo, besta, maça acorrentada e especiais de combo.",
 	"authors": [
 		"Me!"
 	],
