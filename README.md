@@ -4,7 +4,7 @@ Movimentação e armas extras para PvP no Minecraft **1.21.11**, feito para Fabr
 
 O cliente prevê o movimento. O dano, o empurrão e os projéteis só valem no servidor.
 
-[![Versão](https://img.shields.io/badge/vers%C3%A3o-1.1.1-4c8bf5?style=flat-square)](releases/modifiedpvp-1.1.1.jar)
+[![Versão](https://img.shields.io/badge/vers%C3%A3o-1.1.2-4c8bf5?style=flat-square)](releases/modifiedpvp-1.1.2.jar)
 [![Minecraft](https://img.shields.io/badge/Minecraft-1.21.11-62b47a?style=flat-square)](https://fabricmc.net/develop/)
 [![Fabric Loader](https://img.shields.io/badge/Fabric_Loader-0.19.5+-dbd0b4?style=flat-square)](https://fabricmc.net/)
 [![Fabric API](https://img.shields.io/badge/Fabric_API-0.141.6-c8a2c8?style=flat-square)](https://modrinth.com/mod/fabric-api)
@@ -13,13 +13,13 @@ O cliente prevê o movimento. O dano, o empurrão e os projéteis só valem no s
 
 ## Download
 
-**[modifiedpvp-1.1.1.jar](releases/modifiedpvp-1.1.1.jar)**
+**[modifiedpvp-1.1.2.jar](releases/modifiedpvp-1.1.2.jar)**
 
 ## Instalação
 
 1. Instale o [Fabric Loader](https://fabricmc.net/use/installer/) para o Minecraft 1.21.11.
 2. Baixe a [Fabric API](https://modrinth.com/mod/fabric-api) para a 1.21.11.
-3. Coloque a Fabric API e o `modifiedpvp-1.1.1.jar` na pasta `mods` do Minecraft.
+3. Coloque a Fabric API e o `modifiedpvp-1.1.2.jar` na pasta `mods` do Minecraft.
 4. Em servidor, o mod precisa estar no servidor **e** em todos os clientes.
 
 ## Requisitos
@@ -137,6 +137,10 @@ Afogados que nascem com tridente deixam cair o tridente em 70% das mortes (no va
 O jar sai em `build/libs/modifiedpvp-<versão>.jar`.
 
 ## Novidades
+
+### 1.1.2
+
+- Dash, deslize e pulo duplo aparecem como ícones à esquerda da hotbar, com a recarga preenchendo o ícone.
 
 ### 1.1.1
 
