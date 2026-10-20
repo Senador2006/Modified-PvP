@@ -1,7 +1,5 @@
 package com.example.modifiedpvp.client;
 
-import java.util.Locale;
-
 import com.example.modifiedpvp.ModifiedPvP;
 import com.example.modifiedpvp.combat.CombatRules;
 import com.example.modifiedpvp.combat.CombatantAccess;
@@ -10,14 +8,19 @@ import com.example.modifiedpvp.combat.CombatantState;
 import net.fabricmc.fabric.api.client.rendering.v1.hud.HudElementRegistry;
 import net.minecraft.client.DeltaTracker;
 import net.minecraft.client.Minecraft;
-import net.minecraft.client.gui.Font;
 import net.minecraft.client.gui.GuiGraphics;
-import net.minecraft.network.chat.Component;
+import net.minecraft.client.renderer.RenderPipelines;
+import net.minecraft.resources.Identifier;
 
 public final class MovementCooldownHud {
-	private static final int BAR_WIDTH = 42;
-	private static final int BAR_HEIGHT = 4;
-	private static final int GAP = 8;
+	private static final int ICON_HEIGHT = 16;
+	private static final int GAP = 2;
+	private static final int HOTBAR_LEFT = 91;
+	private static final int OFFHAND_OFFSET = 29;
+
+	private static final MoveIcon DASH = new MoveIcon(ModifiedPvP.id("textures/gui/movements/dashing.png"), 36, 32);
+	private static final MoveIcon SLIDE = new MoveIcon(ModifiedPvP.id("textures/gui/movements/sliding.png"), 55, 32);
+	private static final MoveIcon JUMP = new MoveIcon(ModifiedPvP.id("textures/gui/movements/double_jump.png"), 17, 31);
 
 	private MovementCooldownHud() {
 	}
@@ -33,14 +36,12 @@ public final class MovementCooldownHud {
 		}
 
 		CombatantState state = CombatantAccess.of(client.player);
-		Font font = client.font;
-		int totalWidth = BAR_WIDTH * 3 + GAP * 2;
-		int x = (graphics.guiWidth() - totalWidth) / 2;
-		int y = graphics.guiHeight() - 64;
+		int right = graphics.guiWidth() / 2 - HOTBAR_LEFT - OFFHAND_OFFSET - 4;
+		int y = graphics.guiHeight() - (ICON_HEIGHT * 3 + GAP * 2);
 
-		draw(graphics, font, x, y, Component.translatable("combat.modifiedpvp.cooldown.dash"), ready(state.dashCooldown(), CombatRules.DASH_COOLDOWN), false, state.dashCooldown());
-		draw(graphics, font, x + BAR_WIDTH + GAP, y, Component.translatable("combat.modifiedpvp.cooldown.slide"), state.sliding() ? 1.0F : ready(state.slideCooldown(), CombatRules.SLIDE_COOLDOWN), state.sliding(), state.sliding() ? 0 : state.slideCooldown());
-		draw(graphics, font, x + (BAR_WIDTH + GAP) * 2, y, Component.translatable("combat.modifiedpvp.cooldown.jump"), state.doubleJumpReady() ? 1.0F : 0.0F, false, -1);
+		draw(graphics, DASH, right, y, ready(state.dashCooldown(), CombatRules.DASH_COOLDOWN), false);
+		draw(graphics, SLIDE, right, y + ICON_HEIGHT + GAP, state.sliding() ? 1.0F : ready(state.slideCooldown(), CombatRules.SLIDE_COOLDOWN), state.sliding());
+		draw(graphics, JUMP, right, y + (ICON_HEIGHT + GAP) * 2, state.doubleJumpReady() ? 1.0F : 0.0F, false);
 	}
 
 	private static float ready(int cooldown, int max) {
@@ -50,21 +51,27 @@ public final class MovementCooldownHud {
 		return 1.0F - Math.min(1.0F, cooldown / (float) max);
 	}
 
-	private static void draw(GuiGraphics graphics, Font font, int x, int y, Component name, float ready, boolean active, int cooldownTicks) {
-		String label = name.getString();
-		if (!active && ready < 1.0F && cooldownTicks > 0) {
-			label = label + " " + String.format(Locale.ROOT, "%.1f", cooldownTicks / 20.0F);
-		}
-		int textColor = active ? 0xFF7AD7FF : ready >= 1.0F ? 0xFF7CFF9A : 0xFFE8E8E8;
-		graphics.drawString(font, label, x, y, textColor, true);
+	private static void draw(GuiGraphics graphics, MoveIcon icon, int right, int y, float ready, boolean active) {
+		int width = Math.max(1, Math.round(icon.textureWidth() * (ICON_HEIGHT / (float) icon.textureHeight())));
+		int x = right - width;
+		graphics.fill(x - 1, y - 1, x + width + 1, y + ICON_HEIGHT + 1, 0xC0101014);
 
-		int barY = y + 10;
-		graphics.fill(x, barY, x + BAR_WIDTH, barY + BAR_HEIGHT, 0xC0101014);
-		int fill = Math.round(BAR_WIDTH * Math.min(1.0F, Math.max(0.0F, ready)));
-		if (fill <= 0) {
-			return;
+		boolean charged = active || ready >= 1.0F;
+		blit(graphics, icon, x, y, width, ICON_HEIGHT, 0.0F, 0.0F, icon.textureWidth(), icon.textureHeight(), charged ? 0xFFFFFFFF : 0xFF7A7A7A);
+		if (!charged && ready > 0.0F) {
+			int shown = Math.max(1, Math.round(ICON_HEIGHT * ready));
+			int sourceShown = Math.max(1, Math.round(icon.textureHeight() * ready));
+			blit(graphics, icon, x, y + ICON_HEIGHT - shown, width, shown, 0.0F, icon.textureHeight() - sourceShown, icon.textureWidth(), sourceShown, 0xFFFFFFFF);
 		}
-		int color = active ? 0xFF5EC8FF : ready >= 1.0F ? 0xFF3DDC7A : 0xFFE0B15A;
-		graphics.fill(x, barY, x + fill, barY + BAR_HEIGHT, color);
+		if (active) {
+			graphics.renderOutline(x - 1, y - 1, width + 2, ICON_HEIGHT + 2, 0xFF7AD7FF);
+		}
+	}
+
+	private static void blit(GuiGraphics graphics, MoveIcon icon, int x, int y, int width, int height, float u, float v, int regionWidth, int regionHeight, int color) {
+		graphics.blit(RenderPipelines.GUI_TEXTURED, icon.texture(), x, y, u, v, width, height, regionWidth, regionHeight, icon.textureWidth(), icon.textureHeight(), color);
+	}
+
+	private record MoveIcon(Identifier texture, int textureWidth, int textureHeight) {
 	}
 }
