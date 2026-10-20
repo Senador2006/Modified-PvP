@@ -22,6 +22,13 @@ public final class CombatRules {
 	public static final double THRUST_BASE_RANGE = 3.5;
 	public static final double THRUST_RANGE_PER_LEVEL = 0.8;
 	public static final double THRUST_LUNGE = 0.58;
+	public static final double THRUST_CLOSE_RANGE = 1.6;
+
+	public static final int PARRY_WINDOW = 8;
+	public static final int PARRY_SUCCESS_COOLDOWN = 60 * 20;
+	public static final int PARRY_MISS_COOLDOWN = 30 * 20;
+	public static final float PARRY_REFLECT_MULTIPLIER = 2.0F;
+	public static final int PARRY_STUN_TICKS = 3 * 20;
 
 	public static final int HEAVY_MIN_TICKS = 8;
 	public static final int HEAVY_FULL_TICKS = 24;
@@ -75,7 +82,7 @@ public final class CombatRules {
 	public static final int SWORD_COMBO_COOLDOWN = 60 * 20;
 	public static final int SWORD_KILL_GOAL = 50;
 
-	public static final int DUAL_COMBO_HITS = 10;
+	public static final int DUAL_COMBO_HITS = 7;
 	public static final int DUAL_BUFF_TICKS = 90 * 20;
 	public static final int DUAL_COMBO_COOLDOWN = 120 * 20;
 	public static final int DUAL_KILL_GOAL = 50;

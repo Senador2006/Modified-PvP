@@ -5,6 +5,7 @@ import com.example.modifiedpvp.combat.CombatRules;
 import com.example.modifiedpvp.combat.CombatantAccess;
 import com.example.modifiedpvp.combat.CombatantState;
 import com.example.modifiedpvp.combat.ComboSpecials;
+import com.example.modifiedpvp.combat.ModEffects;
 
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
@@ -47,11 +48,16 @@ public abstract class PlayerCombatMixin implements CombatantAccess {
 		callback.setReturnValue(true);
 	}
 
-	@Inject(method = "hurtServer", at = @At("HEAD"))
+	@Inject(method = "hurtServer", at = @At("HEAD"), cancellable = true)
 	private void modifiedpvp$beginHurt(ServerLevel level, DamageSource source, float amount, CallbackInfoReturnable<Boolean> callback) {
-		if ((Object) this instanceof ServerPlayer player) {
-			ComboSpecials.beginHurt(player);
+		if (!((Object) this instanceof ServerPlayer player)) {
+			return;
 		}
+		if (CombatActions.tryParryHit(player, source, amount)) {
+			callback.setReturnValue(false);
+			return;
+		}
+		ComboSpecials.beginHurt(player);
 	}
 
 	@Inject(method = "hurtServer", at = @At("RETURN"))
@@ -93,9 +99,14 @@ public abstract class PlayerCombatMixin implements CombatantAccess {
 		}
 	}
 
-	@Inject(method = "attack", at = @At("HEAD"))
+	@Inject(method = "attack", at = @At("HEAD"), cancellable = true)
 	private void modifiedpvp$captureAttack(Entity target, CallbackInfo callback) {
-		this.modifiedpvp$attackScale = ((Player) (Object) this).getAttackStrengthScale(0.5F);
+		Player player = (Player) (Object) this;
+		if (ModEffects.isStunned(player)) {
+			callback.cancel();
+			return;
+		}
+		this.modifiedpvp$attackScale = player.getAttackStrengthScale(0.5F);
 	}
 
 	@Inject(method = "attack", at = @At("RETURN"))

@@ -16,7 +16,8 @@
 		"DisplayInvoker",
 		"BlockDisplayInvoker",
 		"DrownedTridentMixin",
-		"MaceItemMixin"
+		"MaceItemMixin",
+		"ItemStackStunMixin"
 	],
 	"injectors": {
 		"defaultRequire": 1

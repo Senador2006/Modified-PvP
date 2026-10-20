@@ -4,7 +4,7 @@ Movimentação e armas extras para PvP no Minecraft **1.21.11**, feito para Fabr
 
 O cliente prevê o movimento. O dano, o empurrão, os projéteis e os especiais de combo só valem no servidor.
 
-[![Versão](https://img.shields.io/badge/vers%C3%A3o-1.1.2-4c8bf5?style=flat-square)](releases/modifiedpvp-1.1.2.jar)
+[![Versão](https://img.shields.io/badge/vers%C3%A3o-1.1.3-4c8bf5?style=flat-square)](releases/modifiedpvp-1.1.3.jar)
 [![Minecraft](https://img.shields.io/badge/Minecraft-1.21.11-62b47a?style=flat-square)](https://fabricmc.net/develop/)
 [![Fabric Loader](https://img.shields.io/badge/Fabric_Loader-0.19.5+-dbd0b4?style=flat-square)](https://fabricmc.net/)
 [![Fabric API](https://img.shields.io/badge/Fabric_API-0.141.6-c8a2c8?style=flat-square)](https://modrinth.com/mod/fabric-api)
@@ -13,13 +13,13 @@ O cliente prevê o movimento. O dano, o empurrão, os projéteis e os especiais 
 
 ## Download
 
-**[modifiedpvp-1.1.2.jar](releases/modifiedpvp-1.1.2.jar)**
+**[modifiedpvp-1.1.3.jar](releases/modifiedpvp-1.1.3.jar)**
 
 ## Instalação
 
 1. Instale o [Fabric Loader](https://fabricmc.net/use/installer/) para o Minecraft 1.21.11.
 2. Baixe a [Fabric API](https://modrinth.com/mod/fabric-api) para a 1.21.11.
-3. Coloque a Fabric API e o `modifiedpvp-1.1.2.jar` na pasta `mods` do Minecraft.
+3. Coloque a Fabric API e o `modifiedpvp-1.1.3.jar` na pasta `mods` do Minecraft.
 4. Em servidor, o mod precisa estar no servidor **e** em todos os clientes.
 
 ## Requisitos
@@ -40,20 +40,29 @@ As teclas ficam na categoria **Modified PvP** e podem ser trocadas em Controles.
 | Dash | `R` | Impulso na direção do olhar, no chão ou no ar. Recarga curta. |
 | Pulo duplo | `Espaço` no ar | Solte e aperte o pulo de novo depois de sair do chão. Recarrega ao aterrissar. |
 | Deslize | `C` enquanto corre | Abaixa o corpo, acelera e passa em vãos de 1 bloco. |
-| Estocada | `V` ou clique direito com espada | Avança e atinge o primeiro alvo à frente. Gasta a carga do ataque. |
-| Ataque pesado | Segure o clique direito com machado | Solte para golpear. A barra aparece na hotbar de ação. Olhar para um bloco continua descascando madeira. |
+| Parry | `X` | Abre uma janela curta de defesa. Um ataque recebido nesse momento é anulado, volta para o atacante com o dobro do dano e o deixa atordoado por 3 s. |
+| Estocada | `V` ou clique direito com espada | Avança e atinge o primeiro alvo à frente, mesmo colado em você. Gasta a carga do ataque. |
+| Ataque pesado | Segure o clique direito com machado | Carrega olhando para qualquer lugar. Solte para golpear. A barra aparece na hotbar de ação. |
 | Maça acorrentada | Clique direito com a maça | Lança a maça presa a uma corrente. Ela volta sozinha para a mão. |
 | Trocar flecha | `G` com o arco na mão | Passa para a próxima flecha do bundle. |
 
 Escudo, comida ou lança na mão secundária continuam usando o clique direito. A estocada ainda sai na tecla `V`.
 
-Acima da hotbar, três barras mostram a recarga do dash, do deslize e do pulo duplo.
+À esquerda da hotbar, quatro ícones mostram a recarga do parry, do dash, do deslize e do pulo duplo.
 
 ## Combate
 
 ### Movimento
 
 Dash, pulo duplo e deslize funcionam sem arma na mão. Não saem dentro da água, na lava, montado ou planando.
+
+### Parry
+
+Aperte `X` logo antes de levar o golpe. A janela dura 0,4 s. Qualquer dano que venha de um atacante (golpe corpo a corpo, flecha, tridente, explosão de creeper...) é anulado, e o atacante recebe o dobro do dano. Funciona com qualquer item na mão.
+
+O atacante também fica **Atordoado** por 3 s: não anda, não pula e não ataca. Mobs perdem o alvo e o dano que eles causariam é cancelado. Jogadores atordoados não batem, não usam itens (arco, besta, maça, comida) e não usam dash, deslize, pulo duplo, estocada, ataque pesado ou parry.
+
+Se aparar algo, a recarga é de 60 s. Se a janela passar sem nada, a recarga é de 30 s. Dano sem atacante, como queda ou lava, não é aparado.
 
 ### Espada
 
@@ -95,14 +104,14 @@ O **Grappling Hook** puxa você até o ponto em que a flecha ou o fogo de artif�
 
 Cada arma tem um combo na aba **Especiais** dos advancements. O efeito só existe depois de desbloquear o advancement. A barra de ação mostra o progresso do objetivo e, depois, a contagem do combo.
 
-O golpe precisa acertar um mob ou um jogador. Na espada e nas duas espadas, o golpe tem que estar carregado. Levar dano zera os combos que podem ser interrompidos. Um bloqueio completo não conta como dano. Nos combos sem interrupção, você não sofre dano entre os golpes.
+O golpe precisa acertar um mob ou um jogador. Na espada e nas duas espadas, o golpe tem que estar carregado, e a estocada também conta. Levar dano zera os combos que podem ser interrompidos. Um bloqueio completo não conta como dano. Nos combos sem interrupção, você não sofre dano entre os golpes.
 
 Se passar tempo demais entre um acerto e o outro, a sequência recomeça: 2 s na espada e nas duas espadas, 5 s no machado e no escudo, 4 s no arco, 8 s na maça e 12 s no tridente.
 
 | Arma | Desbloqueio | Combo | Efeito | Recarga | Interrompe |
 | --- | --- | --- | --- | --- | --- |
 | Espada | Mate 50 mobs com a espada | 5 golpes | Acerto crítico automático por 15 s | 60 s | Sim |
-| Duas espadas | Mate 50 mobs com as duas na mão | 10 golpes | Velocidade II e Força II por 90 s | 120 s | Sim |
+| Duas espadas | Mate 50 mobs com as duas na mão | 7 golpes | Velocidade II e Força II por 90 s | 120 s | Sim |
 | Machado | Acerte 20 ataques pesados | 3 ataques pesados | O próximo pesado causa o dobro de dano e atordoa por 3 s | 50 s | Não |
 | Arco | Acerte 10 mobs diferentes | 7 acertos | Disparos com força máxima, sem puxada, por 10 s | 30 s | Sim |
 | Tridente | Puxe um afogado com Lealdade | 5 puxadas | O último alvo recebe Lentidão III por 20 s | 60 s | Não |
@@ -113,7 +122,7 @@ Se passar tempo demais entre um acerto e o outro, a sequência recomeça: 2 s na
 
 | Encantamento | Item | Nível | Efeito |
 | --- | --- | --- | --- |
-| Alcance | Espada | III | Aumenta o alcance da estocada. |
+| Alcance | Espada | III | Aumenta o alcance de todos os golpes da espada em 0,75 bloco por nível, e ainda mais o da estocada. |
 | Golpe Duplo | Espada | III | Com duas espadas, ataca mais rápido e a mão secundária causa um pouco mais de dano. |
 | Corte | Machado | III | Aumenta o dano do ataque pesado. |
 | Kick | Calça | III | O deslize chuta para cima e para frente quem estiver no caminho. |
@@ -156,9 +165,15 @@ O jar sai em `build/libs/modifiedpvp-<versão>.jar`.
 
 ## Novidades
 
-### Próxima versão
+### 1.1.3
 
 - Especiais de combo para espada, duas espadas, machado, arco, tridente, escudo e maça. Cada um abre na aba Especiais dos advancements.
+- Novo movimento **Parry** (`X`): devolve o ataque com o dobro do dano e atordoa o atacante por 3 s. Recarga de 60 s ao acertar e 30 s ao errar.
+- A estocada conta no combo da espada e das duas espadas.
+- O combo das duas espadas agora é de 7 golpes.
+- **Alcance** aumenta o alcance de todos os golpes da espada, não só da estocada.
+- A estocada funciona com o alvo colado em você e com o clique direito mirando em uma entidade.
+- O ataque pesado carrega olhando para qualquer lugar, inclusive blocos.
 
 ### 1.1.2
 

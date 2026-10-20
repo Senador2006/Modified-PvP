@@ -14,6 +14,7 @@ public final class ModNetworking {
 
 	public static void register() {
 		PayloadTypeRegistry.playC2S().register(CombatActionPayload.TYPE, CombatActionPayload.CODEC);
+		PayloadTypeRegistry.playS2C().register(ParryCooldownPayload.TYPE, ParryCooldownPayload.CODEC);
 		ServerPlayNetworking.registerGlobalReceiver(CombatActionPayload.TYPE, (payload, context) -> {
 			CombatAction action = payload.action();
 			if (action == null) {
@@ -29,6 +30,12 @@ public final class ModNetworking {
 		});
 	}
 
+	public static void syncParryCooldown(ServerPlayer player, int ticks) {
+		if (ServerPlayNetworking.canSend(player, ParryCooldownPayload.TYPE)) {
+			ServerPlayNetworking.send(player, new ParryCooldownPayload(ticks));
+		}
+	}
+
 	private static void handle(ServerPlayer player, CombatAction action) {
 		switch (action) {
 			case DASH -> CombatActions.tryDash(player);
@@ -40,6 +47,7 @@ public final class ModNetworking {
 			case HEAVY_RELEASE -> CombatActions.releaseHeavy(player);
 			case HEAVY_CANCEL -> CombatActions.cancelHeavy(player);
 			case CYCLE_ARROW -> BowFeatures.cycleBundleArrow(player);
+			case PARRY -> CombatActions.tryParry(player);
 		}
 	}
 }

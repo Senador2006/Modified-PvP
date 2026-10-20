@@ -14,7 +14,6 @@ import net.minecraft.client.Minecraft;
 import net.minecraft.client.multiplayer.ClientLevel;
 import net.minecraft.network.chat.Component;
 import net.minecraft.world.entity.player.Player;
-import net.minecraft.world.phys.HitResult;
 
 public final class CombatClient {
 	private static boolean wasJumpDown;
@@ -83,6 +82,10 @@ public final class CombatClient {
 			send(CombatAction.THRUST);
 		}
 
+		if (ModKeybinds.PARRY.consumeClick() && CombatActions.tryParry(player)) {
+			send(CombatAction.PARRY);
+		}
+
 		if (ModKeybinds.CYCLE_ARROW.consumeClick() && BowFeatures.holdingBow(player)) {
 			send(CombatAction.CYCLE_ARROW);
 		}
@@ -96,14 +99,11 @@ public final class CombatClient {
 		if (player.isUsingItem() || WeaponStats.offhandConsumesUse(player)) {
 			return;
 		}
-		HitResult hit = client.hitResult;
-		boolean lookingAtBlock = hit != null && hit.getType() == HitResult.Type.BLOCK;
-		boolean lookingAtEntity = hit != null && hit.getType() == HitResult.Type.ENTITY;
-		if (WeaponStats.isSword(player.getMainHandItem()) && !lookingAtEntity && CombatActions.tryThrust(player)) {
+		if (WeaponStats.isSword(player.getMainHandItem()) && CombatActions.tryThrust(player)) {
 			send(CombatAction.THRUST);
 			return;
 		}
-		if (WeaponStats.isAxe(player.getMainHandItem()) && !lookingAtBlock && CombatActions.tryStartHeavy(player)) {
+		if (WeaponStats.isAxe(player.getMainHandItem()) && CombatActions.tryStartHeavy(player)) {
 			send(CombatAction.HEAVY_START);
 		}
 	}

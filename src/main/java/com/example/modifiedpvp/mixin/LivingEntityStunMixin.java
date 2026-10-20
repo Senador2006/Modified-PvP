@@ -1,6 +1,7 @@
 package com.example.modifiedpvp.mixin;
 
 import com.example.modifiedpvp.combat.ComboSpecials;
+import com.example.modifiedpvp.combat.ModEffects;
 import com.example.modifiedpvp.combat.TridentEffects;
 
 import net.minecraft.server.level.ServerLevel;
@@ -19,8 +20,15 @@ public class LivingEntityStunMixin {
 	@Inject(method = "jumpFromGround", at = @At("HEAD"), cancellable = true)
 	private void modifiedpvp$stunBlocksJump(CallbackInfo callback) {
 		LivingEntity entity = (LivingEntity) (Object) this;
-		if (TridentEffects.isStunned(entity) || ComboSpecials.isStunned(entity)) {
+		if (TridentEffects.isStunned(entity) || ComboSpecials.isStunned(entity) || ModEffects.isStunned(entity)) {
 			callback.cancel();
+		}
+	}
+
+	@Inject(method = "hurtServer", at = @At("HEAD"), cancellable = true)
+	private void modifiedpvp$stunnedCannotHurt(ServerLevel level, DamageSource source, float amount, CallbackInfoReturnable<Boolean> callback) {
+		if (source.getEntity() instanceof LivingEntity attacker && attacker != (Object) this && ModEffects.isStunned(attacker)) {
+			callback.setReturnValue(false);
 		}
 	}
 

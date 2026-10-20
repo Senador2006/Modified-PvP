@@ -4,12 +4,15 @@ import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.List;
 
+import com.example.modifiedpvp.network.ModNetworking;
+
 import net.minecraft.core.component.DataComponents;
 import net.minecraft.core.particles.ParticleTypes;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.sounds.SoundEvents;
 import net.minecraft.sounds.SoundSource;
+import net.minecraft.tags.DamageTypeTags;
 import net.minecraft.world.InteractionHand;
 import net.minecraft.world.damagesource.DamageSource;
 import net.minecraft.world.effect.MobEffectInstance;
@@ -28,14 +31,22 @@ import net.minecraft.world.phys.AABB;
 import net.minecraft.world.phys.Vec3;
 
 public final class CombatActions {
+	private static boolean parryReflecting;
+
 	private CombatActions() {
 	}
 
 	public static void tick(Player player) {
 		CombatantState state = CombatantAccess.of(player);
 		state.tick(player);
-		if (state.heavyCharging() && !WeaponStats.isAxe(player.getMainHandItem())) {
+		if (player instanceof ServerPlayer serverPlayer && state.consumeParryResolution()) {
+			ModNetworking.syncParryCooldown(serverPlayer, state.parryCooldown());
+		}
+		if (state.heavyCharging() && (!WeaponStats.isAxe(player.getMainHandItem()) || ModEffects.isStunned(player))) {
 			state.cancelHeavy();
+		}
+		if (state.sliding() && ModEffects.isStunned(player)) {
+			state.stopSlide();
 		}
 		ShieldFeatures.tick(player);
 		if (state.sliding() && player instanceof ServerPlayer serverPlayer) {
@@ -122,7 +133,7 @@ public final class CombatActions {
 	public static boolean tryThrust(Player player) {
 		CombatantState state = CombatantAccess.of(player);
 		ItemStack sword = player.getMainHandItem();
-		if (!state.thrustReady() || !player.isAlive() || player.isSpectator() || !WeaponStats.isSword(sword)) {
+		if (!state.thrustReady() || !player.isAlive() || player.isSpectator() || ModEffects.isStunned(player) || !WeaponStats.isSword(sword)) {
 			return false;
 		}
 		float strength = player.getAttackStrengthScale(0.5F);
@@ -141,11 +152,11 @@ public final class CombatActions {
 
 		if (player instanceof ServerPlayer serverPlayer) {
 			double range = CombatRules.THRUST_BASE_RANGE + rangeLevel * CombatRules.THRUST_RANGE_PER_LEVEL;
-			LivingEntity target = closestInLook(serverPlayer, range, 0.72);
+			LivingEntity target = thrustTarget(serverPlayer, range);
 			if (target != null) {
 				float damage = weaponDamage(serverPlayer, sword, target, strength, 1.2F);
 				if (hurtWithWeapon(serverPlayer, target, sword, damage, EquipmentSlot.MAINHAND, 0.35)) {
-					if (strength >= CombatRules.COMBO_MIN_STRENGTH && (target instanceof Mob || target instanceof Player)) {
+					if (target instanceof Mob || target instanceof Player) {
 						ComboSpecials.onMeleeHit(serverPlayer);
 					}
 					play(serverPlayer, SoundEvents.PLAYER_ATTACK_KNOCKBACK, 1.0F, 0.9F);
@@ -162,7 +173,7 @@ public final class CombatActions {
 
 	public static boolean tryStartHeavy(Player player) {
 		CombatantState state = CombatantAccess.of(player);
-		if (!state.heavyReady() || !player.isAlive() || player.isSpectator() || !WeaponStats.isAxe(player.getMainHandItem())) {
+		if (!state.heavyReady() || !player.isAlive() || player.isSpectator() || ModEffects.isStunned(player) || !WeaponStats.isAxe(player.getMainHandItem())) {
 			return false;
 		}
 		state.startHeavy(player.level().getGameTime());
@@ -229,6 +240,52 @@ public final class CombatActions {
 			ComboSpecials.onHeavySuccess(serverPlayer, comboHit);
 			serverPlayer.level().sendParticles(ParticleTypes.CRIT, serverPlayer.getX(), serverPlayer.getY(0.7), serverPlayer.getZ(), 12, 0.6, 0.3, 0.6, 0.08);
 		}
+	}
+
+	public static boolean tryParry(Player player) {
+		CombatantState state = CombatantAccess.of(player);
+		if (!state.parryReady() || !player.isAlive() || player.isSpectator() || ModEffects.isStunned(player)) {
+			return false;
+		}
+		state.startParry();
+		if (player instanceof ServerPlayer serverPlayer) {
+			serverPlayer.swing(InteractionHand.MAIN_HAND, true);
+			play(serverPlayer, SoundEvents.PLAYER_ATTACK_SWEEP, 0.5F, 1.8F);
+		}
+		return true;
+	}
+
+	public static boolean tryParryHit(ServerPlayer player, DamageSource source, float amount) {
+		if (parryReflecting || amount <= 0.0F || source.is(DamageTypeTags.BYPASSES_INVULNERABILITY)) {
+			return false;
+		}
+		CombatantState state = CombatantAccess.of(player);
+		if (!state.parrying()) {
+			return false;
+		}
+		LivingEntity attacker = source.getEntity() instanceof LivingEntity owner ? owner
+				: source.getDirectEntity() instanceof LivingEntity direct ? direct : null;
+		if (attacker == null || attacker == player || !attacker.isAlive() || ModEffects.isStunned(attacker)) {
+			return false;
+		}
+
+		state.markParrySuccess();
+		ServerLevel level = player.level();
+		attacker.invulnerableTime = 0;
+		parryReflecting = true;
+		try {
+			attacker.hurtServer(level, level.damageSources().playerAttack(player), amount * CombatRules.PARRY_REFLECT_MULTIPLIER);
+		} finally {
+			parryReflecting = false;
+		}
+		if (attacker.isAlive()) {
+			attacker.addEffect(new MobEffectInstance(ModEffects.STUN, CombatRules.PARRY_STUN_TICKS, 0), player);
+		}
+		level.playSound(null, player.getX(), player.getY(), player.getZ(), ModSounds.PARRY, SoundSource.PLAYERS, 1.0F, 0.9F + player.getRandom().nextFloat() * 0.2F);
+		Vec3 spark = player.getEyePosition().add(WeaponStats.horizontalLook(player).scale(0.6));
+		level.sendParticles(ParticleTypes.CRIT, spark.x, spark.y - 0.3, spark.z, 10, 0.15, 0.15, 0.15, 0.25);
+		level.sendParticles(ParticleTypes.ENCHANTED_HIT, attacker.getX(), attacker.getY(0.6), attacker.getZ(), 8, 0.2, 0.25, 0.2, 0.05);
+		return true;
 	}
 
 	public static void strikeOffhand(Player player, Entity target, float attackScale) {
@@ -323,17 +380,37 @@ public final class CombatActions {
 		}
 	}
 
-	private static LivingEntity closestInLook(Player player, double range, double minDot) {
-		LivingEntity closest = null;
-		double bestDistance = Double.MAX_VALUE;
-		for (LivingEntity living : targetsInLook(player, range, minDot)) {
-			double distance = player.distanceToSqr(living);
-			if (distance < bestDistance) {
-				bestDistance = distance;
-				closest = living;
+	private static LivingEntity thrustTarget(Player player, double range) {
+		Vec3 eye = player.getEyePosition();
+		Vec3 look = player.getLookAngle().normalize();
+		Vec3 end = eye.add(look.scale(range));
+		AABB area = player.getBoundingBox().expandTowards(look.scale(range)).inflate(1.5);
+		LivingEntity best = null;
+		double bestScore = Double.MAX_VALUE;
+		for (Entity entity : player.level().getEntities(player, area, candidate -> canHit(player, candidate))) {
+			LivingEntity living = (LivingEntity) entity;
+			AABB box = living.getBoundingBox().inflate(0.3 + living.getPickRadius());
+			double distance = Math.sqrt(box.distanceToSqr(eye));
+			if (distance > range) {
+				continue;
+			}
+			double score;
+			if (box.contains(eye) || box.clip(eye, end).isPresent()) {
+				score = distance;
+			} else {
+				Vec3 toCenter = living.getBoundingBox().getCenter().subtract(eye);
+				double minDot = distance <= CombatRules.THRUST_CLOSE_RANGE ? 0.2 : 0.72;
+				if (toCenter.lengthSqr() < 1.0E-6 || toCenter.normalize().dot(look) < minDot) {
+					continue;
+				}
+				score = distance + 1.0;
+			}
+			if (score < bestScore) {
+				bestScore = score;
+				best = living;
 			}
 		}
-		return closest;
+		return best;
 	}
 
 	private static List<LivingEntity> targetsInLook(Player player, double range, double minDot) {
