@@ -96,7 +96,8 @@ public final class CombatClient {
 	}
 
 	private static void onUsePressed(Minecraft client, Player player) {
-		if (player.isUsingItem() || WeaponStats.offhandConsumesUse(player)) {
+		boolean heavyOverShield = WeaponStats.isAxe(player.getMainHandItem()) && WeaponStats.isShield(player.getOffhandItem());
+		if (!heavyOverShield && (player.isUsingItem() || WeaponStats.offhandConsumesUse(player))) {
 			return;
 		}
 		if (WeaponStats.isSword(player.getMainHandItem()) && CombatActions.tryThrust(player)) {

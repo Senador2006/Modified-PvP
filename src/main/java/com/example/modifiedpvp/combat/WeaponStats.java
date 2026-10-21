@@ -7,6 +7,7 @@ import net.minecraft.world.entity.ai.attributes.AttributeModifier;
 import net.minecraft.world.entity.ai.attributes.Attributes;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.item.ItemStack;
+import net.minecraft.world.item.ShieldItem;
 import net.minecraft.world.phys.Vec3;
 
 public final class WeaponStats {
@@ -23,6 +24,10 @@ public final class WeaponStats {
 
 	public static boolean isDualWielding(Player player) {
 		return isSword(player.getMainHandItem()) && isSword(player.getOffhandItem());
+	}
+
+	public static boolean isShield(ItemStack stack) {
+		return stack.getItem() instanceof ShieldItem;
 	}
 
 	public static boolean offhandConsumesUse(Player player) {

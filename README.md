@@ -42,11 +42,11 @@ As teclas ficam na categoria **Modified PvP** e podem ser trocadas em Controles.
 | Deslize | `C` enquanto corre | Abaixa o corpo, acelera e passa em vãos de 1 bloco. |
 | Parry | `X` | Abre uma janela curta de defesa. Um ataque recebido nesse momento é anulado, volta para o atacante com o dobro do dano e o deixa atordoado por 3 s. |
 | Estocada | `V` ou clique direito com espada | Avança e atinge o primeiro alvo à frente, mesmo colado em você. Gasta a carga do ataque. |
-| Ataque pesado | Segure o clique direito com machado | Carrega olhando para qualquer lugar. Solte para golpear. A barra aparece na hotbar de ação. |
+| Ataque pesado | Segure o clique direito com machado | Carrega olhando para qualquer lugar, mesmo com escudo na outra mão. Solte para golpear. A barra aparece na hotbar de ação. |
 | Maça acorrentada | Clique direito com a maça | Lança a maça presa a uma corrente. Ela volta sozinha para a mão. |
 | Trocar flecha | `G` com o arco na mão | Passa para a próxima flecha do bundle. |
 
-Escudo, comida ou lança na mão secundária continuam usando o clique direito. A estocada ainda sai na tecla `V`.
+Comida ou lança na mão secundária continuam usando o clique direito. O escudo também, menos quando o machado está na mão principal: aí o clique carrega o ataque pesado. A estocada ainda sai na tecla `V`.
 
 À esquerda da hotbar, quatro ícones mostram a recarga do parry, do dash, do deslize e do pulo duplo.
 
@@ -70,7 +70,7 @@ Uma espada na mão principal estoca. Com outra na mão secundária, o clique ace
 
 ### Machado
 
-Segure o clique direito para carregar o golpe pesado. Quanto mais a barra enche, mais forte o acerto. Ele atravessa até três alvos e pode derrubar bloqueio.
+Segure o clique direito para carregar o golpe pesado, mesmo com um escudo na outra mão. Nesse caso o escudo não sobe. Quanto mais a barra enche, mais forte o acerto. Ele atravessa até três alvos e pode derrubar bloqueio.
 
 ### Maça
 
@@ -173,7 +173,7 @@ O jar sai em `build/libs/modifiedpvp-<versão>.jar`.
 - O combo das duas espadas agora é de 7 golpes.
 - **Alcance** aumenta o alcance de todos os golpes da espada, não só da estocada.
 - A estocada funciona com o alvo colado em você e com o clique direito mirando em uma entidade.
-- O ataque pesado carrega olhando para qualquer lugar, inclusive blocos.
+- O ataque pesado carrega olhando para qualquer lugar, inclusive blocos, e também com um escudo na outra mão.
 
 ### 1.1.2
 
