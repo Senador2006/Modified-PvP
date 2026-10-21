@@ -2,6 +2,7 @@ package com.example.modifiedpvp.network;
 
 import com.example.modifiedpvp.combat.BowFeatures;
 import com.example.modifiedpvp.combat.CombatActions;
+import com.example.modifiedpvp.combat.SpearCombat;
 
 import net.fabricmc.fabric.api.networking.v1.PayloadTypeRegistry;
 import net.fabricmc.fabric.api.networking.v1.ServerPlayConnectionEvents;
@@ -14,6 +15,9 @@ public final class ModNetworking {
 
 	public static void register() {
 		PayloadTypeRegistry.playC2S().register(CombatActionPayload.TYPE, CombatActionPayload.CODEC);
+		PayloadTypeRegistry.playS2C().register(ParryCooldownPayload.TYPE, ParryCooldownPayload.CODEC);
+		PayloadTypeRegistry.playS2C().register(SpearStatePayload.TYPE, SpearStatePayload.CODEC);
+		PayloadTypeRegistry.playS2C().register(SpearPressurePayload.TYPE, SpearPressurePayload.CODEC);
 		ServerPlayNetworking.registerGlobalReceiver(CombatActionPayload.TYPE, (payload, context) -> {
 			CombatAction action = payload.action();
 			if (action == null) {
@@ -29,6 +33,12 @@ public final class ModNetworking {
 		});
 	}
 
+	public static void syncParryCooldown(ServerPlayer player, int ticks) {
+		if (ServerPlayNetworking.canSend(player, ParryCooldownPayload.TYPE)) {
+			ServerPlayNetworking.send(player, new ParryCooldownPayload(ticks));
+		}
+	}
+
 	private static void handle(ServerPlayer player, CombatAction action) {
 		switch (action) {
 			case DASH -> CombatActions.tryDash(player);
@@ -40,6 +50,20 @@ public final class ModNetworking {
 			case HEAVY_RELEASE -> CombatActions.releaseHeavy(player);
 			case HEAVY_CANCEL -> CombatActions.cancelHeavy(player);
 			case CYCLE_ARROW -> BowFeatures.cycleBundleArrow(player);
+			case PARRY -> CombatActions.tryParry(player);
+			case SPEAR_COUNTER -> SpearCombat.tryCounter(player);
+		}
+	}
+
+	public static void syncSpearState(ServerPlayer player, int guardTicks, int perfectTicks, int cooldownTicks, int cooldownMax, int riposteTicks, int followUpTicks, int finisherCooldownTicks, int selfBrokenTicks) {
+		if (ServerPlayNetworking.canSend(player, SpearStatePayload.TYPE)) {
+			ServerPlayNetworking.send(player, new SpearStatePayload(guardTicks, perfectTicks, cooldownTicks, cooldownMax, riposteTicks, followUpTicks, finisherCooldownTicks, selfBrokenTicks));
+		}
+	}
+
+	public static void syncSpearPressure(ServerPlayer player, int entityId, int pressure, int brokenTicks, boolean enhanced, boolean immune) {
+		if (ServerPlayNetworking.canSend(player, SpearPressurePayload.TYPE)) {
+			ServerPlayNetworking.send(player, new SpearPressurePayload(entityId, pressure, brokenTicks, enhanced, immune));
 		}
 	}
 }

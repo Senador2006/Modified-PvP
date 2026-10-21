@@ -22,6 +22,13 @@ public final class CombatRules {
 	public static final double THRUST_BASE_RANGE = 3.5;
 	public static final double THRUST_RANGE_PER_LEVEL = 0.8;
 	public static final double THRUST_LUNGE = 0.58;
+	public static final double THRUST_CLOSE_RANGE = 1.6;
+
+	public static final int PARRY_WINDOW = 8;
+	public static final int PARRY_SUCCESS_COOLDOWN = 60 * 20;
+	public static final int PARRY_MISS_COOLDOWN = 30 * 20;
+	public static final float PARRY_REFLECT_MULTIPLIER = 2.0F;
+	public static final int PARRY_STUN_TICKS = 3 * 20;
 
 	public static final int HEAVY_MIN_TICKS = 8;
 	public static final int HEAVY_FULL_TICKS = 24;
@@ -62,6 +69,54 @@ public final class CombatRules {
 	public static final double MACE_SHOCKWAVE_STRENGTH = 1.1;
 	public static final double MACE_SHOCKWAVE_LIFT = 0.42;
 	public static final double MACE_SHOCKWAVE_SELF_STRENGTH = 1.2;
+
+	public static final float COMBO_MIN_STRENGTH = 0.9F;
+	public static final int COMBO_WINDOW_SWORD = 40;
+	public static final int COMBO_WINDOW_DUAL = 40;
+	public static final int COMBO_WINDOW_AXE = 100;
+	public static final int COMBO_WINDOW_BOW = 80;
+	public static final int COMBO_WINDOW_TRIDENT = 240;
+
+	public static final int SWORD_COMBO_HITS = 5;
+	public static final int SWORD_BUFF_TICKS = 15 * 20;
+	public static final int SWORD_COMBO_COOLDOWN = 60 * 20;
+	public static final int SWORD_KILL_GOAL = 50;
+
+	public static final int DUAL_COMBO_HITS = 7;
+	public static final int DUAL_BUFF_TICKS = 90 * 20;
+	public static final int DUAL_COMBO_COOLDOWN = 120 * 20;
+	public static final int DUAL_KILL_GOAL = 50;
+
+	public static final int AXE_COMBO_HITS = 3;
+	public static final int AXE_STUN_TICKS = 3 * 20;
+	public static final int AXE_COMBO_COOLDOWN = 50 * 20;
+	public static final float AXE_EMPOWER_DAMAGE = 2.0F;
+	public static final int HEAVY_GOAL = 20;
+
+	public static final int BOW_COMBO_HITS = 7;
+	public static final int BOW_BUFF_TICKS = 10 * 20;
+	public static final int BOW_COMBO_COOLDOWN = 30 * 20;
+	public static final int BOW_MOB_GOAL = 10;
+
+	public static final int TRIDENT_COMBO_HITS = 5;
+	public static final int TRIDENT_SLOW_TICKS = 20 * 20;
+	public static final int TRIDENT_SLOW_AMPLIFIER = 2;
+	public static final int TRIDENT_COMBO_COOLDOWN = 60 * 20;
+
+	public static final int COMBO_WINDOW_SHIELD = 100;
+	public static final int SHIELD_COMBO_BLOCKS = 3;
+	public static final int SHIELD_COMBO_COOLDOWN = 45 * 20;
+	public static final int SHIELD_BLOCK_GOAL = 30;
+	public static final float SHIELD_REFLECT_RATIO = 0.5F;
+	public static final double SHIELD_REFLECT_LIFT = 0.72;
+
+	public static final int COMBO_WINDOW_MACE = 160;
+	public static final int MACE_COMBO_HITS = 3;
+	public static final int MACE_COMBO_COOLDOWN = 70 * 20;
+	public static final int MACE_CHAIN_GOAL = 10;
+	public static final int MACE_SLOW_TICKS = 4 * 20;
+	public static final int MACE_SLOW_AMPLIFIER = 1;
+	public static final double MACE_PULL_STRENGTH = 0.65;
 
 	private CombatRules() {
 	}

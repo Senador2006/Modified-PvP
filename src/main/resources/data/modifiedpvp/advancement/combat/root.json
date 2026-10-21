@@ -1,0 +1,28 @@
+{
+  "criteria": {
+    "tick": {
+      "trigger": "minecraft:tick"
+    }
+  },
+  "display": {
+    "announce_to_chat": false,
+    "background": "minecraft:gui/advancements/backgrounds/adventure",
+    "description": {
+      "translate": "advancements.modifiedpvp.combat.root.description"
+    },
+    "icon": {
+      "count": 1,
+      "id": "minecraft:netherite_sword"
+    },
+    "show_toast": false,
+    "title": {
+      "translate": "advancements.modifiedpvp.combat.root.title"
+    }
+  },
+  "requirements": [
+    [
+      "tick"
+    ]
+  ],
+  "sends_telemetry_event": false
+}
