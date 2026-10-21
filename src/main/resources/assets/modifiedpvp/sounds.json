@@ -1,0 +1,8 @@
+{
+	"parry": {
+		"subtitle": "subtitles.modifiedpvp.parry",
+		"sounds": [
+			"modifiedpvp:parry"
+		]
+	}
+}

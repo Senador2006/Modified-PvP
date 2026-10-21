@@ -2,6 +2,7 @@ package com.example.modifiedpvp.mixin;
 
 import com.example.modifiedpvp.combat.ArrowVolleyAccess;
 import com.example.modifiedpvp.combat.BowFeatures;
+import com.example.modifiedpvp.combat.ComboSpecials;
 
 import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.entity.player.Player;
@@ -21,6 +22,9 @@ import org.spongepowered.asm.mixin.injection.callback.CallbackInfoReturnable;
 public class BowItemMixin {
 	@Redirect(method = "releaseUsing", at = @At(value = "INVOKE", target = "Lnet/minecraft/world/item/BowItem;getPowerForTime(I)F"))
 	private float modifiedpvp$offhandDraw(int ticks, ItemStack stack, Level level, LivingEntity entity, int remaining) {
+		if (entity instanceof Player player && ComboSpecials.rapidBow(player)) {
+			return 1.0F;
+		}
 		return BowItem.getPowerForTime(BowFeatures.scaledDrawTicks(entity, ticks));
 	}
 

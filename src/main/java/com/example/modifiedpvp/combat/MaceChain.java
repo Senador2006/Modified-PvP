@@ -239,6 +239,7 @@ public final class MaceChain {
 		}
 
 		shockwave(level, player, center);
+		ComboSpecials.onMaceChain(player, center);
 		active.stack.hurtAndBreak(1, level, player, item -> {
 		});
 		level.playSound(null, center.x, center.y, center.z, SoundEvents.MACE_SMASH_GROUND_HEAVY, SoundSource.PLAYERS, 1.0F, 1.1F);

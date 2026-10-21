@@ -21,8 +21,20 @@ public final class CombatantState {
 	private final Set<UUID> slideHits = new HashSet<>();
 	private boolean heavyCharging;
 	private long heavyStartedAt;
+	private int parryWindow;
+	private int parryCooldown;
+	private int parryCooldownMax = CombatRules.PARRY_MISS_COOLDOWN;
+	private boolean parrySucceeded;
+	private boolean parryResolved;
 
 	public void tick(Player player) {
+		if (this.parryCooldown > 0) {
+			this.parryCooldown--;
+		}
+		if (this.parryWindow > 0 && --this.parryWindow == 0) {
+			this.setParryCooldown(this.parrySucceeded ? CombatRules.PARRY_SUCCESS_COOLDOWN : CombatRules.PARRY_MISS_COOLDOWN);
+			this.parryResolved = true;
+		}
 		if (this.dashCooldown > 0) {
 			this.dashCooldown--;
 		}
@@ -158,5 +170,43 @@ public final class CombatantState {
 
 	public void cancelHeavy() {
 		this.heavyCharging = false;
+	}
+
+	public boolean parryReady() {
+		return this.parryCooldown <= 0 && this.parryWindow <= 0;
+	}
+
+	public boolean parrying() {
+		return this.parryWindow > 0;
+	}
+
+	public int parryCooldown() {
+		return this.parryCooldown;
+	}
+
+	public int parryCooldownMax() {
+		return this.parryCooldownMax;
+	}
+
+	public void startParry() {
+		this.parryWindow = CombatRules.PARRY_WINDOW;
+		this.parrySucceeded = false;
+		this.parryResolved = false;
+	}
+
+	public void markParrySuccess() {
+		this.parrySucceeded = true;
+	}
+
+	public boolean consumeParryResolution() {
+		boolean resolved = this.parryResolved;
+		this.parryResolved = false;
+		return resolved;
+	}
+
+	public void setParryCooldown(int ticks) {
+		this.parryWindow = 0;
+		this.parryCooldown = ticks;
+		this.parryCooldownMax = Math.max(1, ticks);
 	}
 }

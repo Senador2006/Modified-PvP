@@ -22,7 +22,8 @@ public final class ModLoot {
 			vanilla("chests/stronghold_library"), inject("stronghold_library"),
 			vanilla("chests/pillager_outpost"), inject("pillager_outpost"),
 			vanilla("chests/underwater_ruin_big"), inject("underwater_ruin_big"),
-			vanilla("chests/underwater_ruin_small"), inject("underwater_ruin_small"));
+			vanilla("chests/underwater_ruin_small"), inject("underwater_ruin_small"),
+			vanilla("chests/trial_chambers/reward_rare"), inject("trial_chambers_romper"));
 
 	private ModLoot() {
 	}
