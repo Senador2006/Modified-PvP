@@ -2,6 +2,7 @@ package com.example.modifiedpvp.mixin;
 
 import com.example.modifiedpvp.combat.ComboSpecials;
 import com.example.modifiedpvp.combat.ModEffects;
+import com.example.modifiedpvp.combat.SpearCombat;
 import com.example.modifiedpvp.combat.TridentEffects;
 
 import net.minecraft.server.level.ServerLevel;
@@ -34,7 +35,9 @@ public class LivingEntityStunMixin {
 
 	@Inject(method = "applyItemBlocking", at = @At("RETURN"))
 	private void modifiedpvp$shieldBlock(ServerLevel level, DamageSource source, float amount, CallbackInfoReturnable<Float> callback) {
-		if ((Object) this instanceof ServerPlayer player) {
+		LivingEntity entity = (LivingEntity) (Object) this;
+		SpearCombat.markBlocked(entity, callback.getReturnValue());
+		if (entity instanceof ServerPlayer player) {
 			ComboSpecials.onShieldBlock(player, source, amount, callback.getReturnValue());
 		}
 	}

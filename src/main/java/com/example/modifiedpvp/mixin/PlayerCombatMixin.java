@@ -6,6 +6,7 @@ import com.example.modifiedpvp.combat.CombatantAccess;
 import com.example.modifiedpvp.combat.CombatantState;
 import com.example.modifiedpvp.combat.ComboSpecials;
 import com.example.modifiedpvp.combat.ModEffects;
+import com.example.modifiedpvp.combat.SpearCombat;
 
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
@@ -30,6 +31,8 @@ public abstract class PlayerCombatMixin implements CombatantAccess {
 	private final CombatantState modifiedpvp$state = new CombatantState();
 	@Unique
 	private float modifiedpvp$attackScale;
+	@Unique
+	private boolean modifiedpvp$spearReapplied;
 
 	@Override
 	public CombatantState modifiedpvp$state() {
@@ -53,8 +56,27 @@ public abstract class PlayerCombatMixin implements CombatantAccess {
 		if (!((Object) this instanceof ServerPlayer player)) {
 			return;
 		}
+		if (SpearCombat.reapplyingGuard()) {
+			ComboSpecials.beginHurt(player);
+			return;
+		}
 		if (CombatActions.tryParryHit(player, source, amount)) {
 			callback.setReturnValue(false);
+			return;
+		}
+		float guarded = SpearCombat.guardIncoming(player, level, source, amount);
+		if (guarded < 0.0F) {
+			callback.setReturnValue(false);
+			return;
+		}
+		if (guarded < amount) {
+			this.modifiedpvp$spearReapplied = true;
+			SpearCombat.beginGuardReapply();
+			try {
+				callback.setReturnValue(player.hurtServer(level, source, guarded));
+			} finally {
+				SpearCombat.endGuardReapply();
+			}
 			return;
 		}
 		ComboSpecials.beginHurt(player);
@@ -63,6 +85,10 @@ public abstract class PlayerCombatMixin implements CombatantAccess {
 	@Inject(method = "hurtServer", at = @At("RETURN"))
 	private void modifiedpvp$interruptCombo(ServerLevel level, DamageSource source, float amount, CallbackInfoReturnable<Boolean> callback) {
 		if (!((Object) this instanceof ServerPlayer player)) {
+			return;
+		}
+		if (this.modifiedpvp$spearReapplied) {
+			this.modifiedpvp$spearReapplied = false;
 			return;
 		}
 		boolean fullyBlocked = ComboSpecials.endHurt(player);

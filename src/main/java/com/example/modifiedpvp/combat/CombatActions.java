@@ -247,6 +247,9 @@ public final class CombatActions {
 		if (!state.parryReady() || !player.isAlive() || player.isSpectator() || ModEffects.isStunned(player)) {
 			return false;
 		}
+		if (player instanceof ServerPlayer serverPlayer && SpearCombat.isGuarding(serverPlayer)) {
+			return false;
+		}
 		state.startParry();
 		if (player instanceof ServerPlayer serverPlayer) {
 			serverPlayer.swing(InteractionHand.MAIN_HAND, true);

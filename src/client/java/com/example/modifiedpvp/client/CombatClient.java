@@ -86,6 +86,10 @@ public final class CombatClient {
 			send(CombatAction.PARRY);
 		}
 
+		if (ModKeybinds.SPEAR_COUNTER.consumeClick() && WeaponStats.isSpear(player.getMainHandItem())) {
+			send(CombatAction.SPEAR_COUNTER);
+		}
+
 		if (ModKeybinds.CYCLE_ARROW.consumeClick() && BowFeatures.holdingBow(player)) {
 			send(CombatAction.CYCLE_ARROW);
 		}

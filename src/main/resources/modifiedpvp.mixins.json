@@ -17,7 +17,10 @@
 		"BlockDisplayInvoker",
 		"DrownedTridentMixin",
 		"MaceItemMixin",
-		"ItemStackStunMixin"
+		"ItemStackStunMixin",
+		"SpearJabMixin",
+		"SpearChargeMixin",
+		"SpearHitMixin"
 	],
 	"injectors": {
 		"defaultRequire": 1

@@ -30,6 +30,10 @@ public final class WeaponStats {
 		return stack.getItem() instanceof ShieldItem;
 	}
 
+	public static boolean isSpear(ItemStack stack) {
+		return stack.is(ItemTags.SPEARS);
+	}
+
 	public static boolean offhandConsumesUse(Player player) {
 		ItemStack offhand = player.getOffhandItem();
 		return !offhand.isEmpty() && (offhand.has(DataComponents.BLOCKS_ATTACKS)
