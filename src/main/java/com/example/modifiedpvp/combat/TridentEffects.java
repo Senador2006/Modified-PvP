@@ -7,6 +7,7 @@ import java.util.List;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.particles.ParticleTypes;
 import net.minecraft.server.level.ServerLevel;
+import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.sounds.SoundEvents;
 import net.minecraft.sounds.SoundSource;
 import net.minecraft.world.effect.MobEffectInstance;
@@ -49,6 +50,9 @@ public final class TridentEffects {
 		HOOKS.add(new Hook(target, livingOwner, pullTicks, stunTicks, speed));
 		target.stopRiding();
 		applyStun(target, livingOwner, stunTicks);
+		if (livingOwner instanceof ServerPlayer player) {
+			ComboSpecials.onTridentPull(player, target);
+		}
 		level.playSound(null, target.getX(), target.getY(), target.getZ(), SoundEvents.TRIDENT_RETURN, SoundSource.PLAYERS, 0.8F, 0.65F);
 		level.sendParticles(ParticleTypes.ENCHANTED_HIT, target.getX(), target.getY(0.6), target.getZ(), 8, 0.2, 0.25, 0.2, 0.02);
 	}

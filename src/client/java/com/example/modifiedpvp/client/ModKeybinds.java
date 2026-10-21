@@ -13,6 +13,8 @@ public final class ModKeybinds {
 	public static final KeyMapping SLIDE = register("slide", GLFW.GLFW_KEY_C);
 	public static final KeyMapping THRUST = register("thrust", GLFW.GLFW_KEY_V);
 	public static final KeyMapping CYCLE_ARROW = register("cycle_arrow", GLFW.GLFW_KEY_G);
+	public static final KeyMapping PARRY = register("parry", GLFW.GLFW_KEY_X);
+	public static final KeyMapping SPEAR_COUNTER = register("spear_counter", GLFW.GLFW_KEY_Z);
 
 	private ModKeybinds() {
 	}
@@ -22,6 +24,8 @@ public final class ModKeybinds {
 		KeyBindingHelper.registerKeyBinding(SLIDE);
 		KeyBindingHelper.registerKeyBinding(THRUST);
 		KeyBindingHelper.registerKeyBinding(CYCLE_ARROW);
+		KeyBindingHelper.registerKeyBinding(PARRY);
+		KeyBindingHelper.registerKeyBinding(SPEAR_COUNTER);
 	}
 
 	private static KeyMapping register(String path, int key) {

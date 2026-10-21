@@ -15,7 +15,12 @@
 		"FireworkRocketMixin",
 		"DisplayInvoker",
 		"BlockDisplayInvoker",
-		"DrownedTridentMixin"
+		"DrownedTridentMixin",
+		"MaceItemMixin",
+		"ItemStackStunMixin",
+		"SpearJabMixin",
+		"SpearChargeMixin",
+		"SpearHitMixin"
 	],
 	"injectors": {
 		"defaultRequire": 1

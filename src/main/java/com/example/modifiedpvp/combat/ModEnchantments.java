@@ -22,6 +22,7 @@ public final class ModEnchantments {
 	public static final ResourceKey<Enchantment> DASHING = key("dashing");
 	public static final ResourceKey<Enchantment> JUMPING = key("jumping");
 	public static final ResourceKey<Enchantment> CHAIN = key("chain");
+	public static final ResourceKey<Enchantment> ROMPER = key("romper");
 
 	private ModEnchantments() {
 	}
