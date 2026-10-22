@@ -15,6 +15,7 @@
 		"FireworkRocketMixin",
 		"DisplayInvoker",
 		"BlockDisplayInvoker",
+		"DamageAbsorbInvoker",
 		"DrownedTridentMixin",
 		"MaceItemMixin",
 		"ItemStackStunMixin",

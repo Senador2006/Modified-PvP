@@ -16,12 +16,17 @@ import org.spongepowered.asm.mixin.injection.callback.CallbackInfoReturnable;
 public class SpearHitMixin {
 	@Inject(method = "hurtServer", at = @At("HEAD"), cancellable = true)
 	private void modifiedpvp$beginSpearStab(ServerLevel level, DamageSource source, float amount, CallbackInfoReturnable<Boolean> callback) {
-		if (source.getEntity() instanceof Player player && SpearCombat.tryCircularCollapse(player, (LivingEntity) (Object) this)) {
+		LivingEntity target = (LivingEntity) (Object) this;
+		if (source.getEntity() instanceof Player player && SpearCombat.cancelCollapsedJab(player)) {
+			callback.setReturnValue(false);
+			return;
+		}
+		if (source.getEntity() instanceof Player player && SpearCombat.tryCircularCollapse(player, target)) {
 			callback.setReturnValue(true);
 			return;
 		}
-		if (source.getEntity() instanceof Player player) {
-			SpearCombat.beginStab(player, (LivingEntity) (Object) this);
+		if (source.getEntity() instanceof Player player && !SpearCombat.ignoresStabTracking()) {
+			SpearCombat.beginStab(player, target);
 		}
 	}
 
@@ -30,7 +35,7 @@ public class SpearHitMixin {
 		LivingEntity target = (LivingEntity) (Object) this;
 		SpearCombat.markHurt(target, source, callback.getReturnValueZ());
 		if (source.getEntity() instanceof Player player) {
-			SpearCombat.endStab(player);
+			SpearCombat.endStab(player, target);
 		}
 	}
 }
