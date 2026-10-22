@@ -6,6 +6,7 @@ import com.example.modifiedpvp.combat.CrossbowFeatures;
 import com.example.modifiedpvp.combat.MaceChain;
 import com.example.modifiedpvp.combat.ModEffects;
 import com.example.modifiedpvp.combat.ModSounds;
+import com.example.modifiedpvp.combat.ParryHitstop;
 import com.example.modifiedpvp.combat.SpearCombat;
 import com.example.modifiedpvp.combat.TridentEffects;
 import com.example.modifiedpvp.loot.ModLoot;
@@ -41,6 +42,7 @@ public class ModifiedPvP implements ModInitializer {
 			CrossbowFeatures.tickGrapples();
 			MaceChain.tick();
 			SpearCombat.tick(server);
+			ParryHitstop.tick(server);
 		});
 		LOGGER.info("Modified PvP loaded");
 	}

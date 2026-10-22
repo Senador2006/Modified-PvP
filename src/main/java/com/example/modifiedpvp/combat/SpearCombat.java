@@ -199,6 +199,9 @@ public final class SpearCombat {
 			return amount;
 		}
 		if (now < state.perfectUntil && !state.perfectUsed) {
+			if (ParryHitstop.holds(player)) {
+				return -1.0F;
+			}
 			state.perfectUsed = true;
 			state.perfectTick = now;
 			state.perfectAttacker = attacker.getUUID();
@@ -207,11 +210,8 @@ public final class SpearCombat {
 			state.riposteTarget = null;
 			state.followUpUntil = 0L;
 			state.followUpTarget = null;
-			level.playSound(null, player.getX(), player.getY(), player.getZ(), SoundEvents.SHIELD_BLOCK, SoundSource.PLAYERS, 0.9F, 1.6F);
-			Vec3 spark = player.getEyePosition().add(WeaponStats.horizontalLook(player).scale(0.6));
-			level.sendParticles(ParticleTypes.CRIT, spark.x, spark.y - 0.3, spark.z, 10, 0.15, 0.15, 0.15, 0.2);
 			countPerfect(player, attacker);
-			instantDoubleThrust(player, attacker);
+			ParryHitstop.armSpear(player, attacker);
 			syncState(player);
 			return -1.0F;
 		}
@@ -434,6 +434,14 @@ public final class SpearCombat {
 		state.finisherCooldownUntil = now + SpearRules.FINISHER_COOLDOWN_TICKS;
 		syncState(player);
 		return true;
+	}
+
+	public static void resolvePerfectRiposte(ServerPlayer player, LivingEntity attacker) {
+		if (!attacker.isAlive() || attacker.isRemoved()) {
+			return;
+		}
+		instantDoubleThrust(player, attacker);
+		syncState(player);
 	}
 
 	private static void instantDoubleThrust(ServerPlayer player, LivingEntity attacker) {

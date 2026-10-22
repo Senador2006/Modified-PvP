@@ -88,6 +88,10 @@ public final class SpearClient {
 		return followUpTicks > 0;
 	}
 
+	public static boolean coolingDown() {
+		return cooldownTicks > 0;
+	}
+
 	public static float cooldownReady() {
 		if (guarding() || riposteReady() || followUpReady()) {
 			return 1.0F;

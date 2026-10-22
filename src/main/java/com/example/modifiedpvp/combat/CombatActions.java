@@ -280,6 +280,9 @@ public final class CombatActions {
 		if (!state.parrying()) {
 			return false;
 		}
+		if (ParryHitstop.holds(player)) {
+			return true;
+		}
 		LivingEntity attacker = source.getEntity() instanceof LivingEntity owner ? owner
 				: source.getDirectEntity() instanceof LivingEntity direct ? direct : null;
 		if (attacker == null || attacker == player || !attacker.isAlive() || ModEffects.isStunned(attacker)) {
@@ -290,24 +293,31 @@ public final class CombatActions {
 		}
 
 		state.markParrySuccess();
+		float taken = ((DamageAbsorbInvoker) player).modifiedpvp$afterArmor(source, amount);
+		taken = ((DamageAbsorbInvoker) player).modifiedpvp$afterMagic(source, taken);
+		ParryHitstop.armReflect(player, attacker, taken * CombatRules.PARRY_REFLECT_MULTIPLIER);
+		return true;
+	}
+
+	public static void finishParry(ServerPlayer player, LivingEntity attacker, float damage) {
+		if (!attacker.isAlive() || attacker.isRemoved() || damage <= 0.0F) {
+			return;
+		}
 		ServerLevel level = player.level();
 		attacker.invulnerableTime = 0;
 		parryReflecting = true;
 		try {
-			float taken = ((DamageAbsorbInvoker) player).modifiedpvp$afterArmor(source, amount);
-			taken = ((DamageAbsorbInvoker) player).modifiedpvp$afterMagic(source, taken);
-			attacker.hurtServer(level, level.damageSources().playerAttack(player), taken * CombatRules.PARRY_REFLECT_MULTIPLIER);
+			attacker.hurtServer(level, level.damageSources().playerAttack(player), damage);
 		} finally {
 			parryReflecting = false;
 		}
 		if (attacker.isAlive()) {
 			attacker.addEffect(new MobEffectInstance(ModEffects.STUN, CombatRules.PARRY_STUN_TICKS, 0), player);
 		}
-		level.playSound(null, player.getX(), player.getY(), player.getZ(), ModSounds.PARRY, SoundSource.PLAYERS, 1.0F, 0.9F + player.getRandom().nextFloat() * 0.2F);
-		Vec3 spark = player.getEyePosition().add(WeaponStats.horizontalLook(player).scale(0.6));
-		level.sendParticles(ParticleTypes.CRIT, spark.x, spark.y - 0.3, spark.z, 10, 0.15, 0.15, 0.15, 0.25);
+		player.swing(InteractionHand.MAIN_HAND, true);
+		level.playSound(null, attacker.getX(), attacker.getY(), attacker.getZ(), SoundEvents.PLAYER_ATTACK_CRIT, SoundSource.PLAYERS, 1.0F, 1.0F);
+		level.sendParticles(ParticleTypes.CRIT, attacker.getX(), attacker.getY(0.6), attacker.getZ(), 12, 0.2, 0.3, 0.2, 0.15);
 		level.sendParticles(ParticleTypes.ENCHANTED_HIT, attacker.getX(), attacker.getY(0.6), attacker.getZ(), 8, 0.2, 0.25, 0.2, 0.05);
-		return true;
 	}
 
 	public static void strikeOffhand(Player player, Entity target, float attackScale) {
