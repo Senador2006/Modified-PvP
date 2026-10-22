@@ -38,6 +38,18 @@ public final class CombatClient {
 		CombatActions.tick(player);
 		trackAirtime(player);
 
+		if (ParryImpact.frozen()) {
+			ModKeybinds.DASH.consumeClick();
+			ModKeybinds.THRUST.consumeClick();
+			ModKeybinds.PARRY.consumeClick();
+			ModKeybinds.SPEAR_COUNTER.consumeClick();
+			ModKeybinds.CYCLE_ARROW.consumeClick();
+			wasJumpDown = client.options.keyJump.isDown();
+			wasUseDown = client.options.keyUse.isDown();
+			wasSlideDown = ModKeybinds.SLIDE.isDown();
+			return;
+		}
+
 		if (client.screen != null) {
 			releaseHeldMoves(player);
 			wasJumpDown = client.options.keyJump.isDown();

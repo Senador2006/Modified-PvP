@@ -21,7 +21,8 @@
 		"ItemStackStunMixin",
 		"SpearJabMixin",
 		"SpearChargeMixin",
-		"SpearHitMixin"
+		"SpearHitMixin",
+		"EntityMoveMixin"
 	],
 	"injectors": {
 		"defaultRequire": 1

@@ -4,7 +4,11 @@
 	"compatibilityLevel": "JAVA_21",
 	"client": [
 		"UseDurationMixin",
-		"ShieldUseMixin"
+		"ShieldUseMixin",
+		"ClientLevelMixin",
+		"MouseHandlerMixin",
+		"GameRendererMixin",
+		"MinecraftClientMixin"
 	],
 	"injectors": {
 		"defaultRequire": 1
