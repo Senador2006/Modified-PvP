@@ -217,6 +217,8 @@ public final class SpearCombat {
 		}
 
 		level.playSound(null, player.getX(), player.getY(), player.getZ(), SoundEvents.SHIELD_BLOCK, SoundSource.PLAYERS, 0.5F, 0.9F);
+		state.guardUntil = now;
+		syncState(player);
 		return amount * (1.0F - SpearRules.GUARD_DAMAGE_REDUCTION);
 	}
 
@@ -446,12 +448,13 @@ public final class SpearCombat {
 
 	private static void instantDoubleThrust(ServerPlayer player, LivingEntity attacker) {
 		int romper = romperLevel(player);
+		boolean pvp = attacker instanceof Player;
 		boolean first = riposteThrust(player, attacker, 0.35);
-		if (first) {
+		if (first && !pvp) {
 			float points = SpearRules.PRESSURE_RIPOSTE + (romper >= 1 ? SpearRules.PRESSURE_ROMPER_RIPOSTE : 0.0F);
 			SpearPressure.add(player, attacker, points, SpearPressure.Cause.RIPOSTE, romper);
 		}
-		if (attacker.isAlive() && !attacker.isRemoved()) {
+		if (!pvp && attacker.isAlive() && !attacker.isRemoved()) {
 			boolean second = riposteThrust(player, attacker, 0.28);
 			if (second && romper >= 2) {
 				SpearPressure.add(player, attacker, SpearRules.PRESSURE_ROMPER_FOLLOW_UP, SpearPressure.Cause.FOLLOW_UP, romper);
@@ -748,7 +751,7 @@ public final class SpearCombat {
 		return player.isAlive()
 				&& !player.isSpectator()
 				&& WeaponStats.isSpear(player.getMainHandItem())
-				&& !ModEffects.isStunned(player)
+				&& !ModEffects.blocksAbilities(player)
 				&& !ComboSpecials.isStunned(player)
 				&& !TridentEffects.isStunned(player)
 				&& !player.isInWater()
@@ -774,6 +777,9 @@ public final class SpearCombat {
 	}
 
 	private static boolean unlocked(ServerPlayer player) {
+		if (ModGameRules.unlockSpecials(player)) {
+			return true;
+		}
 		AdvancementHolder holder = advancement(player);
 		return holder != null && player.getAdvancements().getOrStartProgress(holder).isDone();
 	}

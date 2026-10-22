@@ -119,6 +119,31 @@ public final class CombatRules {
 	public static final int MACE_SLOW_AMPLIFIER = 1;
 	public static final double MACE_PULL_STRENGTH = 0.65;
 
+	public static final int PARRY_PERFECT_TICKS = 4;
+	public static final int PARRY_INTERRUPT_TICKS = 20;
+	public static final float PARRY_EXPLOSION_MITIGATION = 0.5F;
+	public static final float PARRY_LATE_MITIGATION = 0.45F;
+	public static final double PARRY_MELEE_SHOVE = 0.35;
+
+	public static final int CONTROL_RESIST_TICKS = 40;
+	public static final int DASH_COOLDOWN_REDUCTION = 6;
+	public static final int HEAVY_RECOVERY_TICKS = 12;
+
+	public static final int SWORD_EXECUTE_TICKS = 40;
+	public static final int DUAL_FLURRY_TICKS = 80;
+	public static final int DUAL_EXPOSE_TICKS = 16;
+	public static final int BOW_PRECISION_SHOTS = 3;
+	public static final int AXE_EXPOSE_TICKS = 30;
+	public static final int TRIDENT_PVP_EXPOSE_TICKS = 50;
+
+	public static final float SHOTGUN_PLAYER_FALLOFF = 0.5F;
+	public static final float DOUBLE_ARROW_PVP_RATIO = 0.4F;
+	public static final double MACE_PVP_SELF_STRENGTH = 0.55;
+
 	private CombatRules() {
+	}
+
+	public static int dashCooldown(int dashing) {
+		return Math.max(8, DASH_COOLDOWN - dashing * DASH_COOLDOWN_REDUCTION);
 	}
 }

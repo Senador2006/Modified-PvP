@@ -39,6 +39,9 @@ public class BowItemMixin {
 	private void modifiedpvp$compactBundle(ItemStack stack, Level level, LivingEntity entity, int remaining, CallbackInfoReturnable<Boolean> callback) {
 		if (callback.getReturnValueZ() && !level.isClientSide() && entity instanceof Player player) {
 			BowFeatures.compactBundle(player);
+			if (player instanceof net.minecraft.server.level.ServerPlayer serverPlayer && ComboSpecials.rapidBow(serverPlayer)) {
+				ComboSpecials.consumeBowShot(serverPlayer);
+			}
 		}
 	}
 }

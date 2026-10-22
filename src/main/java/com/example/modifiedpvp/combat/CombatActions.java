@@ -9,6 +9,7 @@ import com.example.modifiedpvp.network.ModNetworking;
 
 import net.minecraft.core.component.DataComponents;
 import net.minecraft.core.particles.ParticleTypes;
+import net.minecraft.network.chat.Component;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.sounds.SoundEvents;
@@ -24,17 +25,34 @@ import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.entity.Mob;
 import net.minecraft.world.entity.ai.attributes.Attributes;
 import net.minecraft.world.entity.player.Player;
+import net.minecraft.world.entity.projectile.Projectile;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.component.BlocksAttacks;
 import net.minecraft.world.item.component.Weapon;
 import net.minecraft.world.item.enchantment.EnchantmentHelper;
+import net.minecraft.world.level.ClipContext;
 import net.minecraft.world.phys.AABB;
+import net.minecraft.world.phys.BlockHitResult;
+import net.minecraft.world.phys.HitResult;
 import net.minecraft.world.phys.Vec3;
 
 public final class CombatActions {
 	private static boolean parryReflecting;
+	private static boolean parryMitigating;
 
 	private CombatActions() {
+	}
+
+	public static boolean mitigatingParry() {
+		return parryMitigating;
+	}
+
+	public static void beginParryMitigate() {
+		parryMitigating = true;
+	}
+
+	public static void endParryMitigate() {
+		parryMitigating = false;
 	}
 
 	public static void tick(Player player) {
@@ -43,10 +61,10 @@ public final class CombatActions {
 		if (player instanceof ServerPlayer serverPlayer && state.consumeParryResolution()) {
 			ModNetworking.syncParryCooldown(serverPlayer, state.parryCooldown());
 		}
-		if (state.heavyCharging() && (!WeaponStats.isAxe(player.getMainHandItem()) || ModEffects.isStunned(player))) {
+		if (state.heavyCharging() && (!WeaponStats.isAxe(player.getMainHandItem()) || ModEffects.blocksAbilities(player))) {
 			state.cancelHeavy();
 		}
-		if (state.sliding() && ModEffects.isStunned(player)) {
+		if (state.sliding() && ModEffects.blocksMovementSkills(player)) {
 			state.stopSlide();
 		}
 		ShieldFeatures.tick(player);
@@ -60,27 +78,28 @@ public final class CombatActions {
 
 	public static boolean tryDash(Player player) {
 		CombatantState state = CombatantAccess.of(player);
-		if (!state.dashReady() || !WeaponStats.canUseMovement(player) || player.isInWater() || player.isInLava()) {
+		if (!state.dashReady() || state.heavyLocked() || !WeaponStats.canUseMovement(player) || player.isInWater() || player.isInLava()) {
 			return false;
 		}
 		if (state.sliding()) {
 			state.stopSlide();
 		}
+		int dashing = ModEnchantments.level(player.level(), ModEnchantments.DASHING, player.getItemBySlot(EquipmentSlot.LEGS));
+		int cooldown = CombatRules.dashCooldown(dashing);
 		if (player.level().isClientSide()) {
-			state.startDashCooldown();
+			state.startDashCooldown(cooldown);
 			return true;
 		}
 
 		Vec3 direction = WeaponStats.horizontalLook(player);
 		Vec3 velocity = player.getDeltaMovement();
 		double lift = player.onGround() ? Math.max(velocity.y, 0.14) : velocity.y;
-		int dashing = ModEnchantments.level(player.level(), ModEnchantments.DASHING, player.getItemBySlot(EquipmentSlot.LEGS));
-		double speed = CombatRules.DASH_SPEED + dashing * CombatRules.DASH_SPEED_PER_LEVEL;
+		double speed = clippedDash(player, direction, CombatRules.DASH_SPEED);
 		player.setDeltaMovement(direction.x * speed, lift, direction.z * speed);
 		player.hurtMarked = true;
 		player.resetFallDistance();
 		player.applyPostImpulseGraceTime(8);
-		state.startDashCooldown();
+		state.startDashCooldown(cooldown);
 		exhaust(player, 0.12F);
 		play(player, SoundEvents.PLAYER_ATTACK_SWEEP, 0.7F, 1.35F);
 		burst(player, ParticleTypes.CLOUD, 6);
@@ -116,7 +135,7 @@ public final class CombatActions {
 
 	public static boolean tryStartSlide(Player player) {
 		CombatantState state = CombatantAccess.of(player);
-		if (!state.slideReady() || !WeaponStats.canUseMovement(player) || !player.onGround() || player.isInWater() || !player.isSprinting()) {
+		if (!state.slideReady() || state.heavyLocked() || !WeaponStats.canUseMovement(player) || !player.onGround() || player.isInWater() || !player.isSprinting()) {
 			return false;
 		}
 
@@ -142,7 +161,7 @@ public final class CombatActions {
 	public static boolean tryThrust(Player player) {
 		CombatantState state = CombatantAccess.of(player);
 		ItemStack sword = player.getMainHandItem();
-		if (!state.thrustReady() || !player.isAlive() || player.isSpectator() || ModEffects.isStunned(player) || !WeaponStats.isSword(sword)) {
+		if (!state.thrustReady() || !player.isAlive() || player.isSpectator() || ModEffects.blocksAbilities(player) || !WeaponStats.isSword(sword)) {
 			return false;
 		}
 		float strength = player.getAttackStrengthScale(0.5F);
@@ -171,7 +190,7 @@ public final class CombatActions {
 				float damage = weaponDamage(serverPlayer, sword, target, strength, 1.2F);
 				if (hurtWithWeapon(serverPlayer, target, sword, damage, EquipmentSlot.MAINHAND, 0.35)) {
 					if (target instanceof Mob || target instanceof Player) {
-						ComboSpecials.onMeleeHit(serverPlayer);
+						ComboSpecials.onThrustHit(serverPlayer);
 					}
 					play(serverPlayer, SoundEvents.PLAYER_ATTACK_KNOCKBACK, 1.0F, 0.9F);
 					serverPlayer.level().sendParticles(ParticleTypes.CRIT, target.getX(), target.getY(0.6), target.getZ(), 8, 0.2, 0.2, 0.2, 0.05);
@@ -187,7 +206,7 @@ public final class CombatActions {
 
 	public static boolean tryStartHeavy(Player player) {
 		CombatantState state = CombatantAccess.of(player);
-		if (!state.heavyReady() || !player.isAlive() || player.isSpectator() || ModEffects.isStunned(player) || !WeaponStats.isAxe(player.getMainHandItem())) {
+		if (!state.heavyReady() || !player.isAlive() || player.isSpectator() || ModEffects.blocksAbilities(player) || !WeaponStats.isAxe(player.getMainHandItem())) {
 			return false;
 		}
 		state.startHeavy(player.level().getGameTime());
@@ -223,16 +242,23 @@ public final class CombatActions {
 			if (hits >= 3) {
 				break;
 			}
-			float falloff = hits == 0 ? 1.0F : 0.72F;
+			float falloff = hits == 0 ? 1.0F : hits == 1 ? 0.55F : 0.35F;
+			boolean blocking = target.isBlocking();
+			boolean pvp = target instanceof Player;
 			float multiplier = (0.75F + ratio * 0.85F) * (1.0F + 0.22F * slice) * falloff;
-			if (empowered) {
+			if (empowered && (!pvp || !blocking)) {
 				multiplier *= CombatRules.AXE_EMPOWER_DAMAGE;
 			}
 			float damage = weaponDamage(serverPlayer, axe, target, 1.0F, multiplier);
 			disarmShield(serverPlayer, target, axe);
+			if (empowered && pvp && blocking) {
+				ControlGuard.exposeGuard(target, serverPlayer, CombatRules.AXE_EXPOSE_TICKS);
+			}
 			if (hurtWithWeapon(serverPlayer, target, axe, damage, EquipmentSlot.MAINHAND, 0.45 + ratio * 0.55)) {
-				if (empowered) {
-					target.addEffect(new MobEffectInstance(ModEffects.STUN, CombatRules.AXE_STUN_TICKS, 0), serverPlayer);
+				if (empowered && !pvp) {
+					ControlGuard.stun(target, serverPlayer, CombatRules.AXE_STUN_TICKS);
+				} else if (empowered && pvp) {
+					ControlGuard.offBalance(target, serverPlayer, CombatRules.AXE_EXPOSE_TICKS);
 				} else if (ratio > 0.65F) {
 					target.addEffect(new MobEffectInstance(MobEffects.SLOWNESS, 24, 0), serverPlayer);
 				}
@@ -258,7 +284,7 @@ public final class CombatActions {
 
 	public static boolean tryParry(Player player) {
 		CombatantState state = CombatantAccess.of(player);
-		if (!state.parryReady() || !player.isAlive() || player.isSpectator() || ModEffects.isStunned(player)) {
+		if (!state.parryReady() || !player.isAlive() || player.isSpectator() || ModEffects.blocksAbilities(player)) {
 			return false;
 		}
 		if (player instanceof ServerPlayer serverPlayer && SpearCombat.isGuarding(serverPlayer)) {
@@ -272,47 +298,83 @@ public final class CombatActions {
 		return true;
 	}
 
-	public static boolean tryParryHit(ServerPlayer player, DamageSource source, float amount) {
-		if (parryReflecting || amount <= 0.0F || source.is(DamageTypeTags.BYPASSES_INVULNERABILITY)) {
-			return false;
+	public static float tryParryHit(ServerPlayer player, DamageSource source, float amount) {
+		if (parryReflecting || parryMitigating || amount <= 0.0F || source.is(DamageTypeTags.BYPASSES_INVULNERABILITY)) {
+			return amount;
 		}
 		CombatantState state = CombatantAccess.of(player);
 		if (!state.parrying()) {
-			return false;
+			return amount;
 		}
 		if (ParryHitstop.holds(player)) {
-			return true;
+			return -1.0F;
+		}
+		Origin origin = origin(source);
+		if (origin == Origin.NONE) {
+			return amount;
 		}
 		LivingEntity attacker = source.getEntity() instanceof LivingEntity owner ? owner
 				: source.getDirectEntity() instanceof LivingEntity direct ? direct : null;
-		if (attacker == null || attacker == player || !attacker.isAlive() || ModEffects.isStunned(attacker)) {
-			return false;
+		if (origin != Origin.EXPLOSION && origin != Origin.PROJECTILE && (attacker == null || attacker == player || !attacker.isAlive())) {
+			return amount;
 		}
-		if (attacker instanceof Player other && !player.canHarmPlayer(other)) {
-			return false;
+		if (attacker != null && attacker instanceof Player other && !player.canHarmPlayer(other)) {
+			return amount;
 		}
 
+		boolean late = !state.parryPerfect();
 		state.markParrySuccess();
+		if (origin == Origin.EXPLOSION) {
+			feedback(player, "combat.modifiedpvp.parry.explosion");
+			play(player, SoundEvents.PLAYER_ATTACK_KNOCKBACK, 0.8F, 1.4F);
+			return amount * (1.0F - CombatRules.PARRY_EXPLOSION_MITIGATION);
+		}
+		if (origin == Origin.PROJECTILE) {
+			if (source.getDirectEntity() instanceof Projectile projectile && projectile.isAlive()) {
+				projectile.discard();
+			}
+			feedback(player, "combat.modifiedpvp.parry.projectile");
+			play(player, SoundEvents.PLAYER_ATTACK_KNOCKBACK, 0.9F, 1.6F);
+			burst(player, ParticleTypes.CRIT, 8);
+			return -1.0F;
+		}
+		if (attacker == null) {
+			return amount;
+		}
+		if (late) {
+			feedback(player, "combat.modifiedpvp.parry.late");
+			play(player, SoundEvents.PLAYER_ATTACK_KNOCKBACK, 0.7F, 1.1F);
+			return amount * (1.0F - CombatRules.PARRY_LATE_MITIGATION);
+		}
+
 		float taken = ((DamageAbsorbInvoker) player).modifiedpvp$afterArmor(source, amount);
 		taken = ((DamageAbsorbInvoker) player).modifiedpvp$afterMagic(source, taken);
-		ParryHitstop.armReflect(player, attacker, taken * CombatRules.PARRY_REFLECT_MULTIPLIER);
-		return true;
+		float reflected = attacker instanceof Player ? 0.0F : taken * CombatRules.PARRY_REFLECT_MULTIPLIER;
+		ParryHitstop.armReflect(player, attacker, reflected);
+		feedback(player, "combat.modifiedpvp.parry.melee");
+		return -1.0F;
 	}
 
 	public static void finishParry(ServerPlayer player, LivingEntity attacker, float damage) {
-		if (!attacker.isAlive() || attacker.isRemoved() || damage <= 0.0F) {
+		if (!attacker.isAlive() || attacker.isRemoved()) {
 			return;
 		}
 		ServerLevel level = player.level();
-		attacker.invulnerableTime = 0;
-		parryReflecting = true;
-		try {
-			attacker.hurtServer(level, level.damageSources().playerAttack(player), damage);
-		} finally {
-			parryReflecting = false;
-		}
-		if (attacker.isAlive()) {
-			attacker.addEffect(new MobEffectInstance(ModEffects.STUN, CombatRules.PARRY_STUN_TICKS, 0), player);
+		if (attacker instanceof Player) {
+			ControlGuard.interrupt(attacker, player, CombatRules.PARRY_INTERRUPT_TICKS);
+			Vec3 look = WeaponStats.horizontalLook(player);
+			attacker.knockback(CombatRules.PARRY_MELEE_SHOVE, -look.x, -look.z);
+		} else if (damage > 0.0F) {
+			attacker.invulnerableTime = 0;
+			parryReflecting = true;
+			try {
+				attacker.hurtServer(level, level.damageSources().playerAttack(player), damage);
+			} finally {
+				parryReflecting = false;
+			}
+			if (attacker.isAlive()) {
+				ControlGuard.stun(attacker, player, CombatRules.PARRY_STUN_TICKS);
+			}
 		}
 		player.swing(InteractionHand.MAIN_HAND, true);
 		level.playSound(null, attacker.getX(), attacker.getY(), attacker.getZ(), SoundEvents.PLAYER_ATTACK_CRIT, SoundSource.PLAYERS, 1.0F, 1.0F);
@@ -335,9 +397,13 @@ public final class CombatActions {
 		int doubleHit = ModEnchantments.highest(serverPlayer.level(), ModEnchantments.DOUBLE_HIT, serverPlayer.getMainHandItem(), offhand);
 		float multiplier = CombatRules.DUAL_WIELD_OFFHAND_RATIO * (1.0F + 0.08F * doubleHit);
 		float damage = weaponDamage(serverPlayer, offhand, living, attackScale, multiplier);
-		if (hurtWithWeapon(serverPlayer, living, offhand, damage, EquipmentSlot.OFFHAND, 0.2)) {
+		boolean hurt = hurtWithWeapon(serverPlayer, living, offhand, damage, EquipmentSlot.OFFHAND, 0.2);
+		if (hurt) {
 			serverPlayer.swing(InteractionHand.OFF_HAND);
 			serverPlayer.level().sendParticles(ParticleTypes.ENCHANTED_HIT, living.getX(), living.getY(0.6), living.getZ(), 4, 0.15, 0.15, 0.15, 0.02);
+		}
+		if (living instanceof Mob || living instanceof Player) {
+			ComboSpecials.onOffhandHit(serverPlayer, hurt);
 		}
 	}
 
@@ -346,7 +412,11 @@ public final class CombatActions {
 			return 1.0F;
 		}
 		int level = ModEnchantments.highest(player.level(), ModEnchantments.DOUBLE_HIT, player.getMainHandItem(), player.getOffhandItem());
-		return 1.12F / (1.0F + 0.16F * level);
+		float scale = 1.12F / (1.0F + 0.16F * level);
+		if (ComboSpecials.dualFlurry(player)) {
+			scale *= 0.72F;
+		}
+		return scale;
 	}
 
 	private static float weaponDamage(ServerPlayer player, ItemStack weapon, Entity target, float attackScale, float multiplier) {
@@ -395,13 +465,25 @@ public final class CombatActions {
 		AABB box = player.getBoundingBox().inflate(0.5, 0.35, 0.5);
 		double lift = CombatRules.KICK_LIFT + kick * CombatRules.KICK_LIFT_PER_LEVEL;
 		double shove = CombatRules.KICK_SHOVE + kick * CombatRules.KICK_SHOVE_PER_LEVEL;
+		Vec3 look = WeaponStats.horizontalLook(player);
 		boolean hit = false;
 		for (Entity entity : level.getEntities(player, box, candidate -> canHit(player, candidate))) {
 			if (!(entity instanceof LivingEntity living) || !state.markSlideHit(living.getUUID())) {
 				continue;
 			}
+			if (!ControlGuard.tryApply(living, ControlGuard.Kind.KICK)) {
+				continue;
+			}
+			Vec3 toTarget = new Vec3(living.getX() - player.getX(), 0.0, living.getZ() - player.getZ());
+			double dot = toTarget.lengthSqr() < 1.0E-4 ? 1.0 : toTarget.normalize().dot(look);
+			double liftMul = dot <= -0.25 ? 1.15 : dot >= 0.45 ? 0.55 : 0.7;
+			double shoveMul = dot >= 0.45 ? 1.15 : dot <= -0.25 ? 0.7 : 1.0;
+			if (dot > -0.25 && dot < 0.45) {
+				ControlGuard.offBalance(living, player, 24);
+			}
+			ControlGuard.mark(living, ControlGuard.Kind.KICK);
 			Vec3 motion = living.getDeltaMovement();
-			living.setDeltaMovement(motion.x * 0.35 + state.slideX() * shove, Math.max(0.0, motion.y) + lift, motion.z * 0.35 + state.slideZ() * shove);
+			living.setDeltaMovement(motion.x * 0.35 + state.slideX() * shove * shoveMul, Math.max(0.0, motion.y) + lift * liftMul, motion.z * 0.35 + state.slideZ() * shove * shoveMul);
 			living.setOnGround(false);
 			living.hurtMarked = true;
 			living.resetFallDistance();
@@ -476,6 +558,44 @@ public final class CombatActions {
 
 	private static double squared(double value) {
 		return value * value;
+	}
+
+	private static double clippedDash(Player player, Vec3 direction, double speed) {
+		Vec3 start = player.position().add(0.0, 0.2, 0.0);
+		Vec3 end = start.add(direction.scale(speed * 4.0));
+		BlockHitResult clip = player.level().clip(new ClipContext(start, end, ClipContext.Block.COLLIDER, ClipContext.Fluid.NONE, player));
+		if (clip.getType() == HitResult.Type.MISS) {
+			return speed;
+		}
+		double room = start.distanceTo(clip.getLocation()) - 0.35;
+		if (room <= 0.15) {
+			return 0.12;
+		}
+		return Math.min(speed, room / 4.0);
+	}
+
+	private static Origin origin(DamageSource source) {
+		if (source.is(DamageTypeTags.IS_EXPLOSION)) {
+			return Origin.EXPLOSION;
+		}
+		if (source.is(DamageTypeTags.IS_PROJECTILE) || source.getDirectEntity() instanceof Projectile) {
+			return Origin.PROJECTILE;
+		}
+		if (source.getEntity() instanceof LivingEntity && source.getDirectEntity() == source.getEntity()) {
+			return Origin.MELEE;
+		}
+		return Origin.NONE;
+	}
+
+	private static void feedback(ServerPlayer player, String key) {
+		player.displayClientMessage(Component.translatable(key), true);
+	}
+
+	private enum Origin {
+		NONE,
+		MELEE,
+		PROJECTILE,
+		EXPLOSION
 	}
 
 	private static void exhaust(Player player, float amount) {

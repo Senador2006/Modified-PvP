@@ -67,7 +67,7 @@ public final class WeaponStats {
 	public static boolean canUseMovement(Player player) {
 		return player.isAlive()
 				&& !player.isSpectator()
-				&& !ModEffects.isStunned(player)
+				&& !ModEffects.blocksMovementSkills(player)
 				&& !player.isPassenger()
 				&& !player.getAbilities().flying
 				&& !player.isFallFlying();

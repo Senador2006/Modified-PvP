@@ -4,7 +4,7 @@ Movimentação e armas extras para PvP no Minecraft **1.21.11**, feito para Fabr
 
 O cliente prevê o movimento. O dano, o empurrão, os projéteis e os especiais de combo só valem no servidor.
 
-[![Versão](https://img.shields.io/badge/vers%C3%A3o-1.2.1-4c8bf5?style=flat-square)](releases/modifiedpvp-1.2.1.jar)
+[![Versão](https://img.shields.io/badge/vers%C3%A3o-1.2.2-4c8bf5?style=flat-square)](releases/modifiedpvp-1.2.2.jar)
 [![Minecraft](https://img.shields.io/badge/Minecraft-1.21.11-62b47a?style=flat-square)](https://fabricmc.net/develop/)
 [![Fabric Loader](https://img.shields.io/badge/Fabric_Loader-0.19.5+-dbd0b4?style=flat-square)](https://fabricmc.net/)
 [![Fabric API](https://img.shields.io/badge/Fabric_API-0.141.6-c8a2c8?style=flat-square)](https://modrinth.com/mod/fabric-api)
@@ -13,13 +13,13 @@ O cliente prevê o movimento. O dano, o empurrão, os projéteis e os especiais 
 
 ## Download
 
-**[modifiedpvp-1.2.1.jar](releases/modifiedpvp-1.2.1.jar)**
+**[modifiedpvp-1.2.2.jar](releases/modifiedpvp-1.2.2.jar)**
 
 ## Instalação
 
 1. Instale o [Fabric Loader](https://fabricmc.net/use/installer/) para o Minecraft 1.21.11.
 2. Baixe a [Fabric API](https://modrinth.com/mod/fabric-api) para a 1.21.11.
-3. Coloque a Fabric API e o `modifiedpvp-1.2.1.jar` na pasta `mods` do Minecraft.
+3. Coloque a Fabric API e o `modifiedpvp-1.2.2.jar` na pasta `mods` do Minecraft.
 4. Em servidor, o mod precisa estar no servidor **e** em todos os clientes.
 
 ## Requisitos
@@ -40,7 +40,7 @@ As teclas ficam na categoria **Modified PvP** e podem ser trocadas em Controles.
 | Dash | `R` | Impulso na direção do olhar, no chão ou no ar. Recarga curta. |
 | Pulo duplo | `Espaço` no ar | Solte e aperte o pulo de novo depois de sair do chão. Recarrega ao aterrissar. |
 | Deslize | `C` enquanto corre | Abaixa o corpo, acelera e passa em vãos de 1 bloco. |
-| Parry | `X` | Abre uma janela curta de defesa. Um ataque recebido nesse momento é anulado, volta para o atacante com o dobro do dano e o deixa atordoado por 3 s. |
+| Parry | `X` | Abre uma janela curta de defesa. Melee perfeito inverte a iniciativa. Projétil é anulado. Explosão é mitigada. |
 | Estocada | `V` ou clique direito com espada | Avança e atinge o primeiro alvo à frente, mesmo colado em você. Gasta a carga do ataque. |
 | Ataque pesado | Segure o clique direito com machado | Carrega olhando para qualquer lugar, mesmo com escudo na outra mão. Solte para golpear. A barra aparece na hotbar de ação. |
 | Maça acorrentada | Clique direito com a maça | Lança a maça presa a uma corrente. Ela volta sozinha para a mão. |
@@ -55,17 +55,22 @@ Comida ou lança na mão secundária continuam usando o clique direito. O escudo
 
 ### Movimento
 
-Dash, pulo duplo e deslize funcionam sem arma na mão. Não saem dentro da água, na lava, montado ou planando.
+Dash, pulo duplo e deslize funcionam sem arma na mão. Não saem dentro da água, na lava, montado ou planando. Dash e deslize não cancelam um ataque pesado em carga ou em recuperação. O deslize não dá imunidade. O ícone do pulo duplo aparece no ar enquanto o segundo pulo está disponível.
 
 ### Parry
 
-Aperte `X` logo antes de levar o golpe. A janela dura 0,4 s. Qualquer dano que venha de um atacante (golpe corpo a corpo, flecha, tridente, explosão de creeper...) é anulado. Os dois ficam parados por 0,5 s e o atacante recebe o dobro do dano que passaria da armadura e dos encantamentos. Funciona com qualquer item na mão.
+Aperte `X` logo antes de levar o golpe. A janela dura 0,4 s. A primeira metade é perfeita; a segunda é tardia. O resultado depende do tipo de ataque:
 
-O atacante também fica **Atordoado** por 3 s: não anda, não pula e não ataca. Mobs perdem o alvo e o dano que eles causariam é cancelado. Jogadores atordoados não batem, não usam itens (arco, besta, maça, comida) e não usam dash, deslize, pulo duplo, estocada, ataque pesado ou parry.
+- **Melee perfeito:** anula o golpe e trava os dois por 0,5 s. Em PvP o atacante fica **Interrompido** (não usa habilidades) e é empurrado — não leva o dano refletido nem o atordoamento completo. Contra mobs, o reflexo com o dobro do dano e o stun de 3 s continuam.
+- **Parry tardio:** o dano é só reduzido. Sem reflexo e sem interrupção.
+- **Projétil:** o projétil é anulado. Nada volta para o atirador.
+- **Explosão:** o dano é mitigado. Nada é devolvido ao causador distante.
 
-Se aparar algo, a recarga é de 60 s. Se a janela passar sem nada, a recarga é de 30 s. Dano sem atacante, como queda ou lava, não é aparado.
+Queda, lava e dano sem atacante não são aparados. Depois de um controle, o jogador ganha resistência curta a outro stun, puxão ou chute.
 
-O Contra Golpe da lança é outra habilidade. Não devolve dano e não aplica o stun de 3 s do parry.
+Se aparar algo, a recarga é de 60 s. Se a janela passar sem nada, a recarga é de 30 s.
+
+O Contra Golpe da lança é outra habilidade. Não devolve dano e não aplica o stun do parry.
 
 ### Lança
 
@@ -73,7 +78,7 @@ A jab, a charge, o Lunge e o alcance mínimo vanilla continuam iguais. O mod só
 
 **Contra Golpe** (`Z`) exige lança na mão principal e os mesmos bloqueios de movimento (água, lava, montaria, elytra, stun). A postura dura 0,60 s. Os primeiros 0,20 s são a janela perfeita. Só melee frontal com atacante (cone de 120°) e linha de visão. Queda, lava e golpes pelas costas passam. Projéteis ainda não entram.
 
-Na janela perfeita, aquele golpe é anulado, os dois param por 0,5 s e saem **duas estocadas automáticas** no atacante. Fora dela, ainda na postura, o melee frontal perde 60% do dano. Recarga de 6 s depois da postura. Não ativa junto do parry.
+Na janela perfeita, aquele golpe é anulado, os dois param por 0,5 s e sai uma estocada automática no atacante em PvP (duas em PvE). A riposta automática não gera Pressão em jogadores. Fora da janela perfeita, o melee frontal perde 60% do dano e a postura acaba. Recarga de 6 s depois da postura. Não ativa junto do parry.
 
 **Pressão** vai de 0 a 100 por par atacante + alvo, só no servidor. Jab +8, jab na faixa longa +12 (não soma os dois), charge +18, acerto no escudo +20, riposta perfeita +35. Depois de 3 s sem acréscimo, cai 5 pontos/s. Em 100, zera e aplica **Defesa Rompida**: 0,80 s no PvP (imunidade 8 s), 1,50 s em mobs comuns (imunidade 4 s). Chefes só ficam vulneráveis por pouco tempo, sem trava total. A barra aparece ao mirar o alvo recente.
 
@@ -107,17 +112,17 @@ Flechas diferentes (normal, espectral, com efeito) podem ficar no mesmo bundle. 
 
 ### Tridente
 
-**Lealdade** puxa o alvo até você e aplica um stun: lentidão, fraqueza, sem pulo e sem andar. Nível mais alto puxa mais rápido e segura por mais tempo.
+**Lealdade** puxa o alvo até você se houver linha de visão. Em PvP o alvo fica **Desequilibrado**, sem trava total de pulo e movimento. Contra mobs, o stun antigo continua. Nível mais alto puxa mais rápido.
 
 ### Escudo
 
-Com o escudo erguido, quem estiver na frente é empurrado a cada meio segundo.
+Com o escudo erguido, um bloqueio válido empurra o atacante. Não há mais empurrão automático contínuo na frente.
 
 ### Besta
 
-Uma carga da **Escopeta** coloca várias munições de uma vez e dispara todas em leque. Cada uma é gasta. Vale flecha, fogo de artifício, ou os dois no mesmo carregamento.
+Uma carga da **Escopeta** coloca várias munições de uma vez e dispara todas em leque. Cada uma é gasta. Vale flecha, fogo de artifício, ou os dois no mesmo carregamento. Em PvP, pelotas extras no mesmo jogador causam cada vez menos dano.
 
-O **Grappling Hook** puxa você até o ponto em que a flecha ou o fogo de artifício acerta.
+O **Grappling Hook** puxa você até o ponto em que a flecha ou o fogo de artifício acerta. Obstáculo sólido ou levar dano corta a conexão.
 
 ## Especiais
 
@@ -127,15 +132,17 @@ O golpe precisa acertar um mob ou um jogador. Na espada e nas duas espadas, o go
 
 Se passar tempo demais entre um acerto e o outro, a sequência recomeça: 2 s na espada e nas duas espadas, 5 s no machado e no escudo, 4 s no arco, 8 s na maça e 12 s no tridente.
 
+Combos e buffs ativos zeram na morte, no logout e ao trocar de mundo. O progresso de desbloqueio permanece.
+
 | Arma | Desbloqueio | Combo | Efeito | Recarga | Interrompe |
 | --- | --- | --- | --- | --- | --- |
-| Espada | Mate 50 mobs com a espada | 5 golpes | Acerto crítico automático por 15 s | 60 s | Sim |
-| Duas espadas | Mate 50 mobs com as duas na mão | 7 golpes | Velocidade II e Força II por 90 s | 120 s | Sim |
-| Machado | Acerte 20 ataques pesados | 3 ataques pesados | O próximo pesado causa o dobro de dano e atordoa por 3 s | 50 s | Não |
-| Arco | Acerte 10 mobs diferentes | 7 acertos | Disparos com força máxima, sem puxada, por 10 s | 30 s | Sim |
-| Tridente | Puxe um afogado com Lealdade | 5 puxadas | O último alvo recebe Lentidão III por 20 s | 60 s | Não |
-| Escudo | Bloqueie 30 golpes | 3 bloqueios | O próximo bloqueio devolve metade do dano e lança o atacante para cima | 45 s | Sim |
-| Maça | Acerte 10 arremessos da corrente | 3 acertos, na queda ou na corrente | O próximo golpe puxa os alvos e aplica Lentidão II por 4 s | 70 s | Não |
+| Espada | Mate 50 mobs com a espada | 5 golpes misturando ataque e estocada | O próximo golpe carregado é um crítico | 60 s | Sim |
+| Duas espadas | Mate 50 mobs com as duas na mão | 7 golpes alternando as mãos | Rajada curta de velocidade de ataque. Errar a segunda mão te expõe | 120 s | Sim |
+| Machado | Acerte 20 ataques pesados | 3 ataques pesados | O próximo pesado causa dano extra ou quebra a guarda. Em PvP não atordoa | 50 s | Não |
+| Arco | Acerte 10 mobs diferentes | 7 acertos | 3 disparos de precisão com puxada instantânea | 30 s | Sim |
+| Tridente | Puxe um afogado com Lealdade | 5 puxadas | O último alvo fica exposto por pouco tempo | 60 s | Não |
+| Escudo | Bloqueie 30 golpes | 3 bloqueios | O próximo bloqueio empurra o atacante com força | 45 s | Sim |
+| Maça | Acerte 10 arremessos da corrente | 3 acertos, na queda ou na corrente | O próximo golpe puxa os alvos. Lentidão só em mobs | 70 s | Não |
 | Lança | Acerte 10 Contra Golpes perfeitos em mobs hostis | Pressão até 100, sem ordem fixa | Reação Total (`Z`) ou Colapso Circular (estocada) na Defesa Rompida | 5 s | Não |
 
 ## Encantamentos
@@ -146,11 +153,11 @@ Se passar tempo demais entre um acerto e o outro, a sequência recomeça: 2 s na
 | Golpe Duplo | Espada | III | Com duas espadas, ataca mais rápido e a mão secundária causa um pouco mais de dano. |
 | Corte | Machado | III | Aumenta o dano do ataque pesado. |
 | Kick | Calça | III | O deslize chuta para cima e para frente quem estiver no caminho. |
-| Dashing | Calça | I | Aumenta a velocidade do dash. |
+| Dashing | Calça | I | Reduz a recarga do dash. |
 | Jumping | Bota | III | Aumenta a altura do pulo duplo. |
 | Empurrão | Escudo | III | Aumenta a força do empurrão com o escudo erguido. |
 | Chain | Maça | III | Aumenta o alcance da corrente em 4 blocos por nível (até 22 blocos). |
-| Flecha Dupla | Arco | I | Dispara duas flechas. A segunda também causa dano. Gasta uma flecha. |
+| Flecha Dupla | Arco | I | Dispara duas flechas. Em PvP a segunda causa uma fração do dano. Gasta uma flecha. |
 | Grappling Hook | Besta | I | Puxa você até o impacto do tiro. |
 | Escopeta | Besta | III | Nível I, II e III carregam 2, 3 e 4 munições. |
 | Drenar | Tridente | I | O tridente lançado apaga a água e as colunas de bolhas que atravessa. Não combina com Impulso. |
@@ -173,6 +180,8 @@ Lealdade continua sendo o encantamento vanilla. O mod só muda o que acontece no
 
 Os encantamentos de maça, arco, besta, tridente e Romper da lança não saem na mesa nem com aldeões.
 
+Em servidor, o arquivo `config/modifiedpvp.properties` aceita `unlockSpecials=true` para liberar todos os especiais sem advancements (arenas) e `drainWater=false` para impedir o Drenar de apagar água.
+
 ### Afogados
 
 Afogados que nascem com tridente deixam cair o tridente em 70% das mortes (no vanilla são 8,5%).
@@ -186,6 +195,16 @@ Afogados que nascem com tridente deixam cair o tridente em 70% das mortes (no va
 O jar sai em `build/libs/modifiedpvp-<versão>.jar`.
 
 ## Novidades
+
+### 1.2.2
+
+- Parry separado por tipo de ataque: melee inverte iniciativa em PvP, projétil é anulado, explosão é mitigada. Parry tardio só reduz dano.
+- Stun completo, reflexo 2× e empurrão contínuo do escudo deixam de decidir o duelo sozinhos.
+- Especiais de espada, duas espadas, machado, arco, tridente e escudo passam a ser janelas curtas, não buffs longos.
+- Resistência curta a controles consecutivos. Estados **Interrompido**, **Desequilibrado** e **Guarda Exposta**.
+- Escopeta e Flecha Dupla reduzem dano extra no mesmo jogador. Grappling corta em obstáculo ou ao levar dano.
+- Dash não cancela o compromisso do ataque pesado. Dashing reduz recarga em vez de aumentar velocidade.
+- Configuração de servidor em `config/modifiedpvp.properties`: `unlockSpecials` e `drainWater`.
 
 ### 1.2.1
 

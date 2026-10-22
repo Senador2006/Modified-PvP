@@ -17,12 +17,14 @@ import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.entity.projectile.Projectile;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.component.ChargedProjectiles;
+import net.minecraft.world.level.ClipContext;
 import net.minecraft.world.phys.BlockHitResult;
 import net.minecraft.world.phys.HitResult;
 import net.minecraft.world.phys.Vec3;
 
 public final class CrossbowFeatures {
 	private static final ThreadLocal<ItemStack> SHOOTING = new ThreadLocal<>();
+	private static final ThreadLocal<Integer> VOLLEY = new ThreadLocal<>();
 	private static final List<Grapple> GRAPPLES = new ArrayList<>();
 
 	private CrossbowFeatures() {
@@ -30,21 +32,34 @@ public final class CrossbowFeatures {
 
 	public static void beginShot(ItemStack weapon) {
 		SHOOTING.set(weapon);
+		VOLLEY.remove();
 	}
 
 	public static void endShot() {
 		SHOOTING.remove();
+		VOLLEY.remove();
 	}
 
 	public static void markProjectile(Projectile projectile) {
 		ItemStack weapon = SHOOTING.get();
-		if (weapon == null || weapon.isEmpty() || !(projectile instanceof GrappleAccess access)) {
+		if (weapon == null || weapon.isEmpty()) {
 			return;
 		}
-		if (ModEnchantments.level(projectile.level(), ModEnchantments.GRAPPLING_HOOK, weapon) <= 0) {
-			return;
+		if (projectile instanceof GrappleAccess access && ModEnchantments.level(projectile.level(), ModEnchantments.GRAPPLING_HOOK, weapon) > 0) {
+			access.modifiedpvp$setGrapple(true);
 		}
-		access.modifiedpvp$setGrapple(true);
+		if (ModEnchantments.level(projectile.level(), ModEnchantments.SHOTGUN, weapon) > 0 && projectile instanceof ShotgunAccess access) {
+			Integer volley = VOLLEY.get();
+			if (volley == null) {
+				volley = MultiHit.nextVolley();
+				VOLLEY.set(volley);
+			}
+			access.modifiedpvp$setShotgunVolley(volley);
+		}
+	}
+
+	public static void interrupt(Player player) {
+		GRAPPLES.removeIf(grapple -> grapple.player == player);
 	}
 
 	public static boolean tryLoadShotgun(LivingEntity entity, ItemStack weapon) {
@@ -97,6 +112,13 @@ public final class CrossbowFeatures {
 			if (!player.isAlive() || player.isRemoved() || player.isSpectator() || grapple.ticks <= 0) {
 				iterator.remove();
 				continue;
+			}
+			if (player.level() instanceof ServerLevel level) {
+				Vec3 start = player.getEyePosition();
+				if (level.clip(new ClipContext(start, grapple.destination, ClipContext.Block.COLLIDER, ClipContext.Fluid.NONE, player)).getType() != HitResult.Type.MISS) {
+					iterator.remove();
+					continue;
+				}
 			}
 			Vec3 toTarget = grapple.destination.subtract(player.position());
 			double distance = toTarget.length();
