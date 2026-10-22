@@ -18,6 +18,8 @@ import net.minecraft.world.entity.Mob;
 import net.minecraft.world.entity.Pose;
 import net.minecraft.world.entity.player.Player;
 
+import java.util.ArrayDeque;
+
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.Unique;
 import org.spongepowered.asm.mixin.injection.At;
@@ -27,6 +29,8 @@ import org.spongepowered.asm.mixin.injection.callback.CallbackInfoReturnable;
 
 @Mixin(Player.class)
 public abstract class PlayerCombatMixin implements CombatantAccess {
+	@Unique
+	private final ArrayDeque<Boolean> modifiedpvp$hurtTracked = new ArrayDeque<>();
 	@Unique
 	private final CombatantState modifiedpvp$state = new CombatantState();
 	@Unique
@@ -54,19 +58,23 @@ public abstract class PlayerCombatMixin implements CombatantAccess {
 	@Inject(method = "hurtServer", at = @At("HEAD"), cancellable = true)
 	private void modifiedpvp$beginHurt(ServerLevel level, DamageSource source, float amount, CallbackInfoReturnable<Boolean> callback) {
 		if (!((Object) this instanceof ServerPlayer player)) {
+			this.modifiedpvp$hurtTracked.push(false);
 			return;
 		}
 		if (SpearCombat.reapplyingGuard()) {
 			ComboSpecials.beginHurt(player);
+			this.modifiedpvp$hurtTracked.push(true);
 			return;
 		}
 		if (CombatActions.tryParryHit(player, source, amount)) {
 			callback.setReturnValue(false);
+			this.modifiedpvp$hurtTracked.push(false);
 			return;
 		}
 		float guarded = SpearCombat.guardIncoming(player, level, source, amount);
 		if (guarded < 0.0F) {
 			callback.setReturnValue(false);
+			this.modifiedpvp$hurtTracked.push(false);
 			return;
 		}
 		if (guarded < amount) {
@@ -77,19 +85,21 @@ public abstract class PlayerCombatMixin implements CombatantAccess {
 			} finally {
 				SpearCombat.endGuardReapply();
 			}
+			this.modifiedpvp$hurtTracked.push(false);
 			return;
 		}
 		ComboSpecials.beginHurt(player);
+		this.modifiedpvp$hurtTracked.push(true);
 	}
 
 	@Inject(method = "hurtServer", at = @At("RETURN"))
 	private void modifiedpvp$interruptCombo(ServerLevel level, DamageSource source, float amount, CallbackInfoReturnable<Boolean> callback) {
-		if (!((Object) this instanceof ServerPlayer player)) {
+		boolean pushed = !this.modifiedpvp$hurtTracked.isEmpty() && this.modifiedpvp$hurtTracked.pop();
+		if (!pushed || !((Object) this instanceof ServerPlayer player)) {
 			return;
 		}
 		if (this.modifiedpvp$spearReapplied) {
 			this.modifiedpvp$spearReapplied = false;
-			return;
 		}
 		boolean fullyBlocked = ComboSpecials.endHurt(player);
 		if (fullyBlocked || !callback.getReturnValueZ() || amount <= 0.0F) {

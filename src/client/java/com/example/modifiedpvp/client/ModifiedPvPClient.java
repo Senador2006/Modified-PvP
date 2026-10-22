@@ -1,7 +1,9 @@
 package com.example.modifiedpvp.client;
 
+import com.example.modifiedpvp.ModifiedPvP;
 import com.example.modifiedpvp.combat.CombatantAccess;
 import com.example.modifiedpvp.network.ParryCooldownPayload;
+import com.example.modifiedpvp.network.ParryImpactPayload;
 import com.example.modifiedpvp.network.SpearPressurePayload;
 import com.example.modifiedpvp.network.SpearStatePayload;
 
@@ -9,6 +11,7 @@ import net.fabricmc.api.ClientModInitializer;
 import net.fabricmc.fabric.api.client.event.lifecycle.v1.ClientTickEvents;
 import net.fabricmc.fabric.api.client.networking.v1.ClientPlayConnectionEvents;
 import net.fabricmc.fabric.api.client.networking.v1.ClientPlayNetworking;
+import net.fabricmc.fabric.api.client.rendering.v1.hud.HudElementRegistry;
 
 public class ModifiedPvPClient implements ClientModInitializer {
 	@Override
@@ -16,11 +19,17 @@ public class ModifiedPvPClient implements ClientModInitializer {
 		ModKeybinds.register();
 		MovementCooldownHud.register();
 		SpearHud.register();
+		HudElementRegistry.addLast(ModifiedPvP.id("parry_impact"), ParryImpact::render);
 		ClientTickEvents.END_CLIENT_TICK.register(client -> {
+			ParryImpact.tick();
 			SpearClient.tick();
 			CombatClient.tick(client);
 		});
-		ClientPlayConnectionEvents.DISCONNECT.register((handler, client) -> SpearClient.clear());
+		ClientPlayConnectionEvents.DISCONNECT.register((handler, client) -> {
+			SpearClient.clear();
+			ParryImpact.clear();
+		});
+		ClientPlayNetworking.registerGlobalReceiver(ParryImpactPayload.TYPE, (payload, context) -> ParryImpact.start(payload.ticks()));
 		ClientPlayNetworking.registerGlobalReceiver(ParryCooldownPayload.TYPE, (payload, context) -> {
 			if (context.player() != null) {
 				CombatantAccess.of(context.player()).setParryCooldown(payload.ticks());

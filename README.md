@@ -4,7 +4,7 @@ Movimentação e armas extras para PvP no Minecraft **1.21.11**, feito para Fabr
 
 O cliente prevê o movimento. O dano, o empurrão, os projéteis e os especiais de combo só valem no servidor.
 
-[![Versão](https://img.shields.io/badge/vers%C3%A3o-1.2.0-4c8bf5?style=flat-square)](releases/modifiedpvp-1.2.0.jar)
+[![Versão](https://img.shields.io/badge/vers%C3%A3o-1.2.1-4c8bf5?style=flat-square)](releases/modifiedpvp-1.2.1.jar)
 [![Minecraft](https://img.shields.io/badge/Minecraft-1.21.11-62b47a?style=flat-square)](https://fabricmc.net/develop/)
 [![Fabric Loader](https://img.shields.io/badge/Fabric_Loader-0.19.5+-dbd0b4?style=flat-square)](https://fabricmc.net/)
 [![Fabric API](https://img.shields.io/badge/Fabric_API-0.141.6-c8a2c8?style=flat-square)](https://modrinth.com/mod/fabric-api)
@@ -13,13 +13,13 @@ O cliente prevê o movimento. O dano, o empurrão, os projéteis e os especiais 
 
 ## Download
 
-**[modifiedpvp-1.2.0.jar](releases/modifiedpvp-1.2.0.jar)**
+**[modifiedpvp-1.2.1.jar](releases/modifiedpvp-1.2.1.jar)**
 
 ## Instalação
 
 1. Instale o [Fabric Loader](https://fabricmc.net/use/installer/) para o Minecraft 1.21.11.
 2. Baixe a [Fabric API](https://modrinth.com/mod/fabric-api) para a 1.21.11.
-3. Coloque a Fabric API e o `modifiedpvp-1.2.0.jar` na pasta `mods` do Minecraft.
+3. Coloque a Fabric API e o `modifiedpvp-1.2.1.jar` na pasta `mods` do Minecraft.
 4. Em servidor, o mod precisa estar no servidor **e** em todos os clientes.
 
 ## Requisitos
@@ -59,7 +59,7 @@ Dash, pulo duplo e deslize funcionam sem arma na mão. Não saem dentro da água
 
 ### Parry
 
-Aperte `X` logo antes de levar o golpe. A janela dura 0,4 s. Qualquer dano que venha de um atacante (golpe corpo a corpo, flecha, tridente, explosão de creeper...) é anulado, e o atacante recebe o dobro do dano. Funciona com qualquer item na mão.
+Aperte `X` logo antes de levar o golpe. A janela dura 0,4 s. Qualquer dano que venha de um atacante (golpe corpo a corpo, flecha, tridente, explosão de creeper...) é anulado. Os dois ficam parados por 0,5 s e o atacante recebe o dobro do dano que passaria da armadura e dos encantamentos. Funciona com qualquer item na mão.
 
 O atacante também fica **Atordoado** por 3 s: não anda, não pula e não ataca. Mobs perdem o alvo e o dano que eles causariam é cancelado. Jogadores atordoados não batem, não usam itens (arco, besta, maça, comida) e não usam dash, deslize, pulo duplo, estocada, ataque pesado ou parry.
 
@@ -73,7 +73,7 @@ A jab, a charge, o Lunge e o alcance mínimo vanilla continuam iguais. O mod só
 
 **Contra Golpe** (`Z`) exige lança na mão principal e os mesmos bloqueios de movimento (água, lava, montaria, elytra, stun). A postura dura 0,60 s. Os primeiros 0,20 s são a janela perfeita. Só melee frontal com atacante (cone de 120°) e linha de visão. Queda, lava e golpes pelas costas passam. Projéteis ainda não entram.
 
-Na janela perfeita, aquele golpe é anulado e saem **duas estocadas automáticas** no atacante. Fora dela, ainda na postura, o melee frontal perde 60% do dano. Recarga de 6 s depois da postura. Não ativa junto do parry.
+Na janela perfeita, aquele golpe é anulado, os dois param por 0,5 s e saem **duas estocadas automáticas** no atacante. Fora dela, ainda na postura, o melee frontal perde 60% do dano. Recarga de 6 s depois da postura. Não ativa junto do parry.
 
 **Pressão** vai de 0 a 100 por par atacante + alvo, só no servidor. Jab +8, jab na faixa longa +12 (não soma os dois), charge +18, acerto no escudo +20, riposta perfeita +35. Depois de 3 s sem acréscimo, cai 5 pontos/s. Em 100, zera e aplica **Defesa Rompida**: 0,80 s no PvP (imunidade 8 s), 1,50 s em mobs comuns (imunidade 4 s). Chefes só ficam vulneráveis por pouco tempo, sem trava total. A barra aparece ao mirar o alvo recente.
 
@@ -186,6 +186,14 @@ Afogados que nascem com tridente deixam cair o tridente em 70% das mortes (no va
 O jar sai em `build/libs/modifiedpvp-<versão>.jar`.
 
 ## Novidades
+
+### 1.2.1
+
+- Ícones de dash, deslize, pulo duplo, parry e Contra Golpe atualizados.
+- Parry e Contra Golpe perfeito travam defensor e atacante por 0,5 s antes do golpe refletido ou das estocadas.
+- O parry devolve o dobro do dano que sobra depois da armadura e dos encantamentos.
+- Reação Total e Colapso Circular passam a acertar.
+- O movimento previsto pelo cliente deixa de ser aplicado de novo no servidor.
 
 ### 1.2.0
 

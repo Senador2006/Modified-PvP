@@ -1,10 +1,10 @@
-# Guia de teste — Lança (1.2.0)
+# Guia de teste — Lança (1.2.1)
 
 Como validar Contra Golpe, Pressão, Romper e Reação Total no Minecraft 1.21.11.
 
 ## Preparação
 
-1. Coloque `releases/modifiedpvp-1.2.0.jar` e a Fabric API da 1.21.11 na pasta `mods`.
+1. Coloque `releases/modifiedpvp-1.2.1.jar` e a Fabric API da 1.21.11 na pasta `mods`.
 2. Em servidor, o jar precisa estar no servidor **e** em todos os clientes.
 3. Crie um mundo criativo com `/gamemode creative`, depois teste o dano em sobrevivência ou aventura.
 4. Itens úteis:

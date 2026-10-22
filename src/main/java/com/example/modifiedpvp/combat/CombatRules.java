@@ -25,6 +25,7 @@ public final class CombatRules {
 	public static final double THRUST_CLOSE_RANGE = 1.6;
 
 	public static final int PARRY_WINDOW = 8;
+	public static final int PARRY_HITSTOP_TICKS = 10;
 	public static final int PARRY_SUCCESS_COOLDOWN = 60 * 20;
 	public static final int PARRY_MISS_COOLDOWN = 30 * 20;
 	public static final float PARRY_REFLECT_MULTIPLIER = 2.0F;

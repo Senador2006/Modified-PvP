@@ -16,6 +16,7 @@ public final class ModNetworking {
 	public static void register() {
 		PayloadTypeRegistry.playC2S().register(CombatActionPayload.TYPE, CombatActionPayload.CODEC);
 		PayloadTypeRegistry.playS2C().register(ParryCooldownPayload.TYPE, ParryCooldownPayload.CODEC);
+		PayloadTypeRegistry.playS2C().register(ParryImpactPayload.TYPE, ParryImpactPayload.CODEC);
 		PayloadTypeRegistry.playS2C().register(SpearStatePayload.TYPE, SpearStatePayload.CODEC);
 		PayloadTypeRegistry.playS2C().register(SpearPressurePayload.TYPE, SpearPressurePayload.CODEC);
 		ServerPlayNetworking.registerGlobalReceiver(CombatActionPayload.TYPE, (payload, context) -> {
@@ -36,6 +37,12 @@ public final class ModNetworking {
 	public static void syncParryCooldown(ServerPlayer player, int ticks) {
 		if (ServerPlayNetworking.canSend(player, ParryCooldownPayload.TYPE)) {
 			ServerPlayNetworking.send(player, new ParryCooldownPayload(ticks));
+		}
+	}
+
+	public static void syncParryImpact(ServerPlayer player, int ticks) {
+		if (ServerPlayNetworking.canSend(player, ParryImpactPayload.TYPE)) {
+			ServerPlayNetworking.send(player, new ParryImpactPayload(ticks));
 		}
 	}
 
