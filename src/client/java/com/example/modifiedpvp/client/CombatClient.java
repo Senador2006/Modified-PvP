@@ -82,7 +82,7 @@ public final class CombatClient {
 			send(CombatAction.THRUST);
 		}
 
-		if (ModKeybinds.PARRY.consumeClick() && CombatActions.tryParry(player)) {
+		if (ModKeybinds.PARRY.consumeClick() && !SpearClient.guarding() && CombatActions.tryParry(player)) {
 			send(CombatAction.PARRY);
 		}
 

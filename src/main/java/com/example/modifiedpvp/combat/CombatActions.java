@@ -4,6 +4,7 @@ import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.List;
 
+import com.example.modifiedpvp.mixin.DamageAbsorbInvoker;
 import com.example.modifiedpvp.network.ModNetworking;
 
 import net.minecraft.core.component.DataComponents;
@@ -65,6 +66,10 @@ public final class CombatActions {
 		if (state.sliding()) {
 			state.stopSlide();
 		}
+		if (player.level().isClientSide()) {
+			state.startDashCooldown();
+			return true;
+		}
 
 		Vec3 direction = WeaponStats.horizontalLook(player);
 		Vec3 velocity = player.getDeltaMovement();
@@ -92,6 +97,10 @@ public final class CombatActions {
 		double jump = player.getAttributeValue(Attributes.JUMP_STRENGTH) + player.getJumpBoostPower();
 		int jumping = ModEnchantments.level(player.level(), ModEnchantments.JUMPING, player.getItemBySlot(EquipmentSlot.FEET));
 		double boost = jump * (CombatRules.DOUBLE_JUMP_MULTIPLIER + jumping * CombatRules.JUMPING_PER_LEVEL);
+		if (player.level().isClientSide()) {
+			state.useDoubleJump();
+			return true;
+		}
 		Vec3 velocity = player.getDeltaMovement();
 		player.setDeltaMovement(velocity.x, boost, velocity.z);
 		player.setOnGround(false);
@@ -142,6 +151,11 @@ public final class CombatActions {
 		}
 
 		int rangeLevel = ModEnchantments.level(player.level(), ModEnchantments.RANGE, sword);
+		if (player.level().isClientSide()) {
+			player.resetAttackStrengthTicker();
+			state.startThrustCooldown();
+			return true;
+		}
 		Vec3 direction = WeaponStats.horizontalLook(player);
 		double lunge = CombatRules.THRUST_LUNGE + rangeLevel * 0.05;
 		Vec3 velocity = player.getDeltaMovement();
@@ -218,7 +232,7 @@ public final class CombatActions {
 			disarmShield(serverPlayer, target, axe);
 			if (hurtWithWeapon(serverPlayer, target, axe, damage, EquipmentSlot.MAINHAND, 0.45 + ratio * 0.55)) {
 				if (empowered) {
-					ComboSpecials.stun(target, serverPlayer, CombatRules.AXE_STUN_TICKS);
+					target.addEffect(new MobEffectInstance(ModEffects.STUN, CombatRules.AXE_STUN_TICKS, 0), serverPlayer);
 				} else if (ratio > 0.65F) {
 					target.addEffect(new MobEffectInstance(MobEffects.SLOWNESS, 24, 0), serverPlayer);
 				}
@@ -271,13 +285,18 @@ public final class CombatActions {
 		if (attacker == null || attacker == player || !attacker.isAlive() || ModEffects.isStunned(attacker)) {
 			return false;
 		}
+		if (attacker instanceof Player other && !player.canHarmPlayer(other)) {
+			return false;
+		}
 
 		state.markParrySuccess();
 		ServerLevel level = player.level();
 		attacker.invulnerableTime = 0;
 		parryReflecting = true;
 		try {
-			attacker.hurtServer(level, level.damageSources().playerAttack(player), amount * CombatRules.PARRY_REFLECT_MULTIPLIER);
+			float taken = ((DamageAbsorbInvoker) player).modifiedpvp$afterArmor(source, amount);
+			taken = ((DamageAbsorbInvoker) player).modifiedpvp$afterMagic(source, taken);
+			attacker.hurtServer(level, level.damageSources().playerAttack(player), taken * CombatRules.PARRY_REFLECT_MULTIPLIER);
 		} finally {
 			parryReflecting = false;
 		}
@@ -330,6 +349,7 @@ public final class CombatActions {
 	private static boolean hurtWithWeapon(ServerPlayer player, LivingEntity target, ItemStack weapon, float damage, EquipmentSlot slot, double knockback) {
 		ServerLevel level = player.level();
 		DamageSource source = level.damageSources().playerAttack(player);
+		target.invulnerableTime = 0;
 		boolean hurt = target.hurtServer(level, source, damage);
 		if (!hurt) {
 			return false;
@@ -426,8 +446,11 @@ public final class CombatActions {
 				.filter(living -> {
 					Vec3 toTarget = living.getBoundingBox().getCenter().subtract(eye);
 					double distance = toTarget.length();
-					if (distance > range || distance < 1.0E-4) {
+					if (distance > range || !player.hasLineOfSight(living)) {
 						return false;
+					}
+					if (distance < 1.0E-4) {
+						return true;
 					}
 					return toTarget.normalize().dot(look) >= minDot;
 				})

@@ -98,6 +98,14 @@ public final class SpearCombat {
 		return reapplyingGuard;
 	}
 
+	public static boolean ignoresStabTracking() {
+		return autoRiposting;
+	}
+
+	public static boolean cancelCollapsedJab(Player player) {
+		return jab != null && jab.player == player && jab.collapsed && !autoRiposting;
+	}
+
 	public static void beginGuardReapply() {
 		reapplyingGuard = true;
 	}
@@ -175,10 +183,13 @@ public final class SpearCombat {
 			return amount;
 		}
 		long now = level.getGameTime();
-		if (now >= state.guardUntil || !WeaponStats.isSpear(player.getMainHandItem())) {
+		if (!(source.getEntity() instanceof LivingEntity attacker) || !isGuardableMelee(source, attacker, player)) {
 			return amount;
 		}
-		if (!(source.getEntity() instanceof LivingEntity attacker) || !isGuardableMelee(source, attacker, player)) {
+		if (state.perfectUsed && attacker.getUUID().equals(state.perfectAttacker) && now == state.perfectTick) {
+			return -1.0F;
+		}
+		if (now >= state.guardUntil || !WeaponStats.isSpear(player.getMainHandItem())) {
 			return amount;
 		}
 		if (player.invulnerableTime > 10 || player.isInvulnerableTo(level, source)) {
@@ -187,16 +198,12 @@ public final class SpearCombat {
 		if (!inFront(player, attacker) || !player.hasLineOfSight(attacker)) {
 			return amount;
 		}
-
-		if (state.perfectUsed && attacker.getUUID().equals(state.perfectAttacker) && now == state.perfectTick) {
-			return -1.0F;
-		}
 		if (now < state.perfectUntil && !state.perfectUsed) {
 			state.perfectUsed = true;
 			state.perfectTick = now;
 			state.perfectAttacker = attacker.getUUID();
 			state.guardUntil = now;
-			state.riposteUntil = now + SpearRules.RIPOSTE_WINDOW_TICKS;
+			state.riposteUntil = 0L;
 			state.riposteTarget = null;
 			state.followUpUntil = 0L;
 			state.followUpTarget = null;
@@ -304,9 +311,14 @@ public final class SpearCombat {
 		if (now < state.finisherCooldownUntil) {
 			return false;
 		}
+		jab.collapsed = true;
+		boolean enhanced = opening.enhanced && romperLevel(player) >= 3;
+		if (!circularStrike(player, target, enhanced, opening.category)) {
+			jab.collapsed = false;
+			return false;
+		}
 		SpearPressure.consume(player, opening, now);
 		state.finisherCooldownUntil = now + SpearRules.FINISHER_COOLDOWN_TICKS;
-		circularStrike(player, target, opening.enhanced && romperLevel(player) >= 3, opening.category);
 		syncState(player);
 		return true;
 	}
@@ -326,9 +338,9 @@ public final class SpearCombat {
 		frame = new StabFrame(player, living, kind, frame);
 	}
 
-	public static void endStab(Player self) {
+	public static void endStab(Player self, LivingEntity target) {
 		StabFrame current = frame;
-		if (current == null || current.player != self) {
+		if (current == null || current.player != self || current.target != target) {
 			return;
 		}
 		frame = current.previous;
@@ -336,7 +348,6 @@ public final class SpearCombat {
 			return;
 		}
 		ServerPlayer player = current.player;
-		LivingEntity target = current.target;
 		int romper = romperLevel(player);
 		if (current.kind == Kind.CHARGE) {
 			SpearPressure.add(player, target, current.blocked ? SpearRules.PRESSURE_SHIELD : SpearRules.PRESSURE_CHARGE,
@@ -399,7 +410,10 @@ public final class SpearCombat {
 	}
 
 	private static boolean tryFinisher(ServerPlayer player, GuardState state, long now) {
-		SpearPressure.Opening opening = SpearPressure.openingFor(player, now);
+		if (!canHoldGuard(player) || CombatantAccess.of(player).parrying()) {
+			return false;
+		}
+		SpearPressure.Opening opening = SpearPressure.openingAimed(player, now);
 		if (opening == null) {
 			return false;
 		}
@@ -412,15 +426,12 @@ public final class SpearCombat {
 			player.displayClientMessage(Component.translatable("combat.modifiedpvp.spear.finisher_cooldown", seconds), true);
 			return false;
 		}
-		LivingEntity target = opening.target;
-		if (!inFinisherReach(player, target)) {
-			player.displayClientMessage(Component.translatable("combat.modifiedpvp.spear.finisher_reach"), true);
-			return false;
-		}
 		boolean enhanced = opening.enhanced && romperLevel(player) >= 3;
+		if (!strike(player, opening.target, enhanced, opening.category)) {
+			return true;
+		}
 		SpearPressure.consume(player, opening, now);
 		state.finisherCooldownUntil = now + SpearRules.FINISHER_COOLDOWN_TICKS;
-		strike(player, target, enhanced, opening.category);
 		syncState(player);
 		return true;
 	}
@@ -480,7 +491,7 @@ public final class SpearCombat {
 		return hurt;
 	}
 
-	private static void circularStrike(ServerPlayer player, LivingEntity focus, boolean enhanced, SpearPressure.Category category) {
+	private static boolean circularStrike(ServerPlayer player, LivingEntity focus, boolean enhanced, SpearPressure.Category category) {
 		ServerLevel level = player.level();
 		ItemStack spear = player.getMainHandItem();
 		boolean boss = category == SpearPressure.Category.BOSS;
@@ -494,7 +505,9 @@ public final class SpearCombat {
 			primary = Math.min(primary, focus.getMaxHealth() * SpearRules.FINISHER_PVP_MAX_HEALTH_RATIO);
 		}
 
-		hurtCircular(player, focus, spear, source, primary, SpearRules.CIRCULAR_KNOCKBACK);
+		if (!hurtCircular(player, focus, spear, source, primary, SpearRules.CIRCULAR_KNOCKBACK)) {
+			return false;
+		}
 		double radius = SpearRules.CIRCULAR_RADIUS;
 		AABB area = player.getBoundingBox().inflate(radius);
 		for (Entity entity : level.getEntities(player, area, candidate -> candidate instanceof LivingEntity living && living != focus && living.isAlive() && !living.isAlliedTo(player))) {
@@ -527,11 +540,12 @@ public final class SpearCombat {
 		level.playSound(null, player.getX(), player.getY(), player.getZ(), SoundEvents.PLAYER_ATTACK_SWEEP, SoundSource.PLAYERS, 1.0F, 0.65F);
 		level.playSound(null, focus.getX(), focus.getY(), focus.getZ(), SoundEvents.SPEAR_HIT, SoundSource.PLAYERS, 1.0F, 0.7F);
 		player.displayClientMessage(Component.translatable("combat.modifiedpvp.spear.circular"), true);
+		return true;
 	}
 
-	private static void hurtCircular(ServerPlayer player, LivingEntity target, ItemStack spear, DamageSource source, float damage, double knockback) {
+	private static boolean hurtCircular(ServerPlayer player, LivingEntity target, ItemStack spear, DamageSource source, float damage, double knockback) {
 		if (damage <= 0.0F || !target.isAlive()) {
-			return;
+			return false;
 		}
 		target.invulnerableTime = 0;
 		autoRiposting = true;
@@ -542,7 +556,7 @@ public final class SpearCombat {
 			autoRiposting = false;
 		}
 		if (!hurt) {
-			return;
+			return false;
 		}
 		Vec3 away = new Vec3(target.getX() - player.getX(), 0.0, target.getZ() - player.getZ());
 		Vec3 direction = away.lengthSqr() < 1.0E-4 ? WeaponStats.horizontalLook(player) : away.normalize();
@@ -550,6 +564,7 @@ public final class SpearCombat {
 		EnchantmentHelper.doPostAttackEffectsWithItemSource(player.level(), target, source, spear);
 		spear.hurtAndBreak(1, player, EquipmentSlot.MAINHAND);
 		player.setLastHurtMob(target);
+		return true;
 	}
 
 	private static void ring(ServerLevel level, ServerPlayer player, double radius) {
@@ -591,7 +606,7 @@ public final class SpearCombat {
 		}
 	}
 
-	private static void strike(ServerPlayer player, LivingEntity target, boolean enhanced, SpearPressure.Category category) {
+	private static boolean strike(ServerPlayer player, LivingEntity target, boolean enhanced, SpearPressure.Category category) {
 		ServerLevel level = player.level();
 		ItemStack spear = player.getMainHandItem();
 		boolean pvp = category == SpearPressure.Category.PVP;
@@ -608,13 +623,21 @@ public final class SpearCombat {
 
 		Vec3 toTarget = new Vec3(target.getX() - player.getX(), 0.0, target.getZ() - player.getZ());
 		Vec3 direction = toTarget.lengthSqr() < 1.0E-4 ? WeaponStats.horizontalLook(player) : toTarget.normalize();
-		boolean hurt = target.hurtServer(level, source, damage);
-		if (hurt) {
-			target.knockback(SpearRules.FINISHER_KNOCKBACK, -direction.x, -direction.z);
-			EnchantmentHelper.doPostAttackEffectsWithItemSource(level, target, source, spear);
-			spear.hurtAndBreak(1, player, EquipmentSlot.MAINHAND);
-			player.setLastHurtMob(target);
+		target.invulnerableTime = 0;
+		autoRiposting = true;
+		boolean hurt;
+		try {
+			hurt = target.hurtServer(level, source, damage);
+		} finally {
+			autoRiposting = false;
 		}
+		if (!hurt) {
+			return false;
+		}
+		target.knockback(SpearRules.FINISHER_KNOCKBACK, -direction.x, -direction.z);
+		EnchantmentHelper.doPostAttackEffectsWithItemSource(level, target, source, spear);
+		spear.hurtAndBreak(1, player, EquipmentSlot.MAINHAND);
+		player.setLastHurtMob(target);
 		player.swing(InteractionHand.MAIN_HAND, true);
 		player.resetAttackStrengthTicker();
 		if (!player.getAbilities().invulnerable) {
@@ -637,6 +660,7 @@ public final class SpearCombat {
 		if (enhanced) {
 			wave(player, target);
 		}
+		return true;
 	}
 
 	private static void wave(ServerPlayer player, LivingEntity center) {
@@ -660,7 +684,7 @@ public final class SpearCombat {
 		level.playSound(null, center.getX(), center.getY(), center.getZ(), SoundEvents.PLAYER_ATTACK_SWEEP, SoundSource.PLAYERS, 0.9F, 0.7F);
 	}
 
-	private static boolean inFinisherReach(ServerPlayer player, LivingEntity target) {
+	static boolean inFinisherReach(ServerPlayer player, LivingEntity target) {
 		if (!player.hasLineOfSight(target)) {
 			return false;
 		}
@@ -824,6 +848,7 @@ public final class SpearCombat {
 		private final UUID roleTarget;
 		private final int romper;
 		private final boolean guardCut;
+		private boolean collapsed;
 		private boolean roleHit;
 
 		private JabContext(ServerPlayer player, float strength, Role role, UUID roleTarget, int romper, boolean guardCut) {

@@ -192,11 +192,12 @@ public final class ComboSpecials {
 	}
 
 	public static boolean endHurt(ServerPlayer player) {
-		if (HURTS.isEmpty()) {
+		HurtFrame frame = HURTS.peek();
+		if (frame == null || frame.player != player) {
 			return false;
 		}
-		HurtFrame frame = HURTS.pop();
-		return frame.player == player && frame.fullyBlocked;
+		HURTS.pop();
+		return frame.fullyBlocked;
 	}
 
 	public static void onShieldBlock(ServerPlayer player, DamageSource source, float incoming, float blocked) {

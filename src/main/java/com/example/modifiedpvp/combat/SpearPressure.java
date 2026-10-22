@@ -57,7 +57,8 @@ public final class SpearPressure {
 				entry.value = SpearRules.PRESSURE_MAX - 1.0F;
 			} else {
 				entry.value = 0.0F;
-				breakDefense(attacker, target, cause == Cause.RIPOSTE && romper >= 3, now);
+				boolean riposte = cause == Cause.RIPOSTE || cause == Cause.FOLLOW_UP;
+				breakDefense(attacker, target, riposte && romper >= 3, now);
 			}
 		}
 		send(attacker, target, entry.value, now);
@@ -74,7 +75,7 @@ public final class SpearPressure {
 		return opening;
 	}
 
-	static Opening openingFor(ServerPlayer player, long now) {
+	static Opening openingAimed(ServerPlayer player, long now) {
 		Opening best = null;
 		double bestDistance = Double.MAX_VALUE;
 		for (Opening opening : OPENINGS.values()) {
@@ -83,6 +84,9 @@ public final class SpearPressure {
 			}
 			LivingEntity target = opening.target;
 			if (!target.isAlive() || target.isRemoved() || target.level() != player.level()) {
+				continue;
+			}
+			if (!SpearCombat.inFinisherReach(player, target)) {
 				continue;
 			}
 			double distance = player.distanceToSqr(target);
