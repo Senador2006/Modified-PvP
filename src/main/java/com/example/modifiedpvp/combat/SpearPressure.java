@@ -11,6 +11,7 @@ import com.example.modifiedpvp.network.ModNetworking;
 import net.minecraft.core.component.DataComponents;
 import net.minecraft.core.particles.ParticleTypes;
 import net.minecraft.core.registries.Registries;
+import net.minecraft.network.chat.Component;
 import net.minecraft.server.MinecraftServer;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
@@ -48,6 +49,12 @@ public final class SpearPressure {
 				return;
 			}
 			entry.lastCharge = now;
+		}
+		if (cause == Cause.SHIELD) {
+			if (now - entry.lastShield < SpearRules.CHARGE_REPEAT_TICKS) {
+				return;
+			}
+			entry.lastShield = now;
 		}
 		entry.lastGain = now;
 		entry.value = Math.min(SpearRules.PRESSURE_MAX, entry.value + points);
@@ -223,6 +230,10 @@ public final class SpearPressure {
 		};
 		Opening opening = new Opening(target, attacker.getUUID(), now + duration, now + immunity, enhanced && category != Category.BOSS, category);
 		OPENINGS.put(target.getUUID(), opening);
+		attacker.displayClientMessage(Component.translatable("combat.modifiedpvp.spear.broken"), true);
+		if (target instanceof ServerPlayer victim) {
+			victim.displayClientMessage(Component.translatable("combat.modifiedpvp.spear.broken_self"), true);
+		}
 
 		ServerLevel level = attacker.level();
 		if (category != Category.BOSS && target.isBlocking()) {
@@ -324,6 +335,7 @@ public final class SpearPressure {
 		private float value;
 		private long lastGain;
 		private long lastCharge = Long.MIN_VALUE / 2;
+		private long lastShield = Long.MIN_VALUE / 2;
 		private int sent = -1;
 
 		private Entry(LivingEntity target) {

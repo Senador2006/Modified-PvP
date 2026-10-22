@@ -10,7 +10,9 @@ import com.example.modifiedpvp.ModifiedPvP;
 import net.fabricmc.fabric.api.attachment.v1.AttachmentRegistry;
 import net.fabricmc.fabric.api.attachment.v1.AttachmentSyncPredicate;
 import net.fabricmc.fabric.api.attachment.v1.AttachmentType;
+import net.fabricmc.fabric.api.entity.event.v1.ServerEntityWorldChangeEvents;
 import net.fabricmc.fabric.api.entity.event.v1.ServerLivingEntityEvents;
+import net.fabricmc.fabric.api.networking.v1.ServerPlayConnectionEvents;
 import net.minecraft.advancements.AdvancementHolder;
 import net.minecraft.core.particles.ParticleTypes;
 import net.minecraft.network.chat.Component;
@@ -47,6 +49,13 @@ public final class ComboSpecials {
 
 	public static void register() {
 		ServerLivingEntityEvents.AFTER_DEATH.register(ComboSpecials::onDeath);
+		ServerPlayConnectionEvents.DISCONNECT.register((handler, server) -> {
+			if (handler.player != null) {
+				clearCombat(handler.player);
+				ControlGuard.forget(handler.player.getUUID());
+			}
+		});
+		ServerEntityWorldChangeEvents.AFTER_PLAYER_CHANGE_WORLD.register((player, origin, destination) -> clearCombat(player));
 	}
 
 	public static void tick() {
@@ -63,10 +72,29 @@ public final class ComboSpecials {
 
 	public static void onMeleeHit(ServerPlayer player) {
 		if (WeaponStats.isDualWielding(player)) {
-			advance(player, Style.DUAL, null);
+			advanceDual(player, 1);
 		} else if (WeaponStats.isSword(player.getMainHandItem())) {
-			advance(player, Style.SWORD, null);
+			advanceSword(player, 1);
 		}
+	}
+
+	public static void onThrustHit(ServerPlayer player) {
+		if (WeaponStats.isDualWielding(player)) {
+			advanceDual(player, 1);
+		} else if (WeaponStats.isSword(player.getMainHandItem())) {
+			advanceSword(player, 2);
+		}
+	}
+
+	public static void onOffhandHit(ServerPlayer player, boolean hit) {
+		if (!WeaponStats.isDualWielding(player)) {
+			return;
+		}
+		if (!hit) {
+			ControlGuard.interrupt(player, player, CombatRules.DUAL_EXPOSE_TICKS);
+			return;
+		}
+		advanceDual(player, 2);
 	}
 
 	public static void onHeavySuccess(ServerPlayer player, boolean comboHit) {
@@ -158,6 +186,7 @@ public final class ComboSpecials {
 			data.shieldWindowUntil = 0L;
 		}
 		save(player, data);
+		CrossbowFeatures.interrupt(player);
 		player.displayClientMessage(Component.translatable("combat.modifiedpvp.combo.interrupted"), true);
 	}
 
@@ -174,12 +203,38 @@ public final class ComboSpecials {
 
 	public static boolean autoCrit(Player player) {
 		ComboData data = player.getAttached(ATTACHMENT);
-		return data != null && player.level().getGameTime() < data.swordBuffUntil;
+		if (data == null || player.level().getGameTime() >= data.swordBuffUntil) {
+			return false;
+		}
+		if (player instanceof ServerPlayer serverPlayer) {
+			data = data.copy();
+			data.swordBuffUntil = 0L;
+			save(serverPlayer, data);
+		}
+		return true;
 	}
 
 	public static boolean rapidBow(Player player) {
 		ComboData data = player.getAttached(ATTACHMENT);
-		return data != null && player.level().getGameTime() < data.bowBuffUntil;
+		return data != null && data.bowShotsLeft > 0 && player.level().getGameTime() < data.bowBuffUntil;
+	}
+
+	public static boolean dualFlurry(Player player) {
+		ComboData data = player.getAttached(ATTACHMENT);
+		return data != null && player.level().getGameTime() < data.dualBuffUntil;
+	}
+
+	public static void consumeBowShot(ServerPlayer player) {
+		ComboData data = player.getAttached(ATTACHMENT);
+		if (data == null || data.bowShotsLeft <= 0) {
+			return;
+		}
+		data = data.copy();
+		data.bowShotsLeft--;
+		if (data.bowShotsLeft <= 0) {
+			data.bowBuffUntil = 0L;
+		}
+		save(player, data);
 	}
 
 	public static boolean hasAxeEmpower(Player player) {
@@ -235,9 +290,7 @@ public final class ComboSpecials {
 		if (dirty) {
 			save(player, data);
 		}
-		if (empowered) {
-			reflect(player, source, blocked);
-		}
+		ShieldFeatures.onBlock(player, source, empowered);
 	}
 
 	public static void onMaceMelee(ServerPlayer player, LivingEntity target) {
@@ -326,6 +379,10 @@ public final class ComboSpecials {
 	}
 
 	private static void onDeath(LivingEntity victim, DamageSource source) {
+		if (victim instanceof ServerPlayer deadPlayer) {
+			clearCombat(deadPlayer);
+			ControlGuard.forget(deadPlayer.getUUID());
+		}
 		if (!(victim instanceof Mob) || !(source.getEntity() instanceof ServerPlayer player)) {
 			return;
 		}
@@ -378,6 +435,51 @@ public final class ComboSpecials {
 		}
 	}
 
+	private static void advanceSword(ServerPlayer player, int action) {
+		if (!unlocked(player, Style.SWORD)) {
+			return;
+		}
+		ComboData data = edit(player);
+		long now = player.level().getGameTime();
+		if (now >= data.swordWindowUntil) {
+			data.swordVariety = 0;
+		}
+		data.swordVariety |= action;
+		data.swordLastAction = action;
+		if (pushCombo(player, data, Style.SWORD, null)) {
+			save(player, data);
+		}
+	}
+
+	private static void advanceDual(ServerPlayer player, int hand) {
+		if (!unlocked(player, Style.DUAL)) {
+			return;
+		}
+		ComboData data = edit(player);
+		long now = player.level().getGameTime();
+		if (now >= data.dualWindowUntil) {
+			data.dualLastHand = 0;
+		}
+		if (data.dualLastHand == hand && data.dualCombo > 0 && now < data.dualWindowUntil) {
+			player.displayClientMessage(Component.translatable("combat.modifiedpvp.combo.variety"), true);
+			return;
+		}
+		data.dualLastHand = hand;
+		if (pushCombo(player, data, Style.DUAL, null)) {
+			save(player, data);
+		}
+	}
+
+	private static void clearCombat(ServerPlayer player) {
+		ComboData data = player.getAttached(ATTACHMENT);
+		if (data == null) {
+			return;
+		}
+		data = data.copy();
+		data.clearCombat();
+		save(player, data);
+	}
+
 	private static boolean pushCombo(ServerPlayer player, ComboData data, Style style, LivingEntity focus) {
 		long now = player.level().getGameTime();
 		long cooldownUntil = cooldownUntil(data, style);
@@ -391,6 +493,12 @@ public final class ComboSpecials {
 		long windowUntil = windowUntil(data, style);
 		count = now < windowUntil ? count + 1 : 1;
 		if (count >= style.hits()) {
+			if (style == Style.SWORD && Integer.bitCount(data.swordVariety) < 2) {
+				setCombo(data, style, count - 1);
+				setWindow(data, style, now + style.window());
+				player.displayClientMessage(Component.translatable("combat.modifiedpvp.combo.variety"), true);
+				return true;
+			}
 			setCombo(data, style, 0);
 			setWindow(data, style, 0L);
 			setCooldown(data, style, now + style.cooldown());
@@ -405,17 +513,27 @@ public final class ComboSpecials {
 
 	private static void activate(ServerPlayer player, ComboData data, Style style, LivingEntity focus, long now) {
 		switch (style) {
-			case SWORD -> data.swordBuffUntil = now + CombatRules.SWORD_BUFF_TICKS;
+			case SWORD -> {
+				data.swordBuffUntil = now + CombatRules.SWORD_EXECUTE_TICKS;
+				data.swordVariety = 0;
+				data.swordLastAction = 0;
+			}
 			case DUAL -> {
-				player.addEffect(new MobEffectInstance(MobEffects.SPEED, CombatRules.DUAL_BUFF_TICKS, 1));
-				player.addEffect(new MobEffectInstance(MobEffects.STRENGTH, CombatRules.DUAL_BUFF_TICKS, 1));
+				data.dualBuffUntil = now + CombatRules.DUAL_FLURRY_TICKS;
+				data.dualLastHand = 0;
 			}
 			case AXE -> data.axeEmpowered = true;
-			case BOW -> data.bowBuffUntil = now + CombatRules.BOW_BUFF_TICKS;
+			case BOW -> {
+				data.bowBuffUntil = now + CombatRules.BOW_BUFF_TICKS;
+				data.bowShotsLeft = CombatRules.BOW_PRECISION_SHOTS;
+			}
 			case SHIELD -> data.shieldEmpowered = true;
 			case MACE -> data.maceEmpowered = true;
 			case TRIDENT -> {
-				if (focus != null) {
+				if (focus instanceof Player) {
+					ControlGuard.offBalance(focus, player, CombatRules.TRIDENT_PVP_EXPOSE_TICKS);
+					ControlGuard.exposeGuard(focus, player, CombatRules.TRIDENT_PVP_EXPOSE_TICKS);
+				} else if (focus != null) {
 					PENDING_SLOWS.add(new PendingSlow(focus, player));
 				}
 			}
@@ -445,6 +563,9 @@ public final class ComboSpecials {
 	}
 
 	private static boolean unlocked(ServerPlayer player, Style style) {
+		if (ModGameRules.unlockSpecials(player)) {
+			return true;
+		}
 		var server = player.level().getServer();
 		if (server == null) {
 			return false;
@@ -628,31 +749,6 @@ public final class ComboSpecials {
 		}
 	}
 
-	private static void reflect(ServerPlayer player, DamageSource source, float blocked) {
-		if (!(source.getEntity() instanceof LivingEntity attacker) || attacker == player || !attacker.isAlive()) {
-			return;
-		}
-		if (attacker instanceof Player other && !player.canHarmPlayer(other)) {
-			return;
-		}
-		float damage = blocked * CombatRules.SHIELD_REFLECT_RATIO;
-		if (damage > 0.0F && player.level() instanceof ServerLevel level) {
-			reflecting = true;
-			try {
-				attacker.hurtServer(level, level.damageSources().playerAttack(player), damage);
-			} finally {
-				reflecting = false;
-			}
-			level.sendParticles(ParticleTypes.CRIT, attacker.getX(), attacker.getY(0.6), attacker.getZ(), 8, 0.2, 0.25, 0.2, 0.05);
-		}
-		Vec3 motion = attacker.getDeltaMovement();
-		attacker.setDeltaMovement(motion.x, Math.max(motion.y, CombatRules.SHIELD_REFLECT_LIFT), motion.z);
-		attacker.setOnGround(false);
-		attacker.hurtMarked = true;
-		attacker.resetFallDistance();
-		player.level().playSound(null, player.getX(), player.getY(), player.getZ(), SoundEvents.SHIELD_BLOCK, SoundSource.PLAYERS, 1.0F, 0.7F);
-	}
-
 	private static void gather(ServerPlayer player, Vec3 center) {
 		if (!(player.level() instanceof ServerLevel level)) {
 			return;
@@ -671,7 +767,9 @@ public final class ComboSpecials {
 				living.setOnGround(false);
 				living.hurtMarked = true;
 			}
-			living.addEffect(new MobEffectInstance(MobEffects.SLOWNESS, CombatRules.MACE_SLOW_TICKS, CombatRules.MACE_SLOW_AMPLIFIER), player);
+			if (!(living instanceof Player)) {
+				living.addEffect(new MobEffectInstance(MobEffects.SLOWNESS, CombatRules.MACE_SLOW_TICKS, CombatRules.MACE_SLOW_AMPLIFIER), player);
+			}
 		}
 		level.playSound(null, center.x, center.y, center.z, SoundEvents.MACE_SMASH_GROUND, SoundSource.PLAYERS, 0.9F, 0.8F);
 		level.sendParticles(ParticleTypes.WITCH, center.x, center.y + 0.2, center.z, 18, 0.6, 0.2, 0.6, 0.02);

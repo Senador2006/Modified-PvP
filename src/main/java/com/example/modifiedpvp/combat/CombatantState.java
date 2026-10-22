@@ -9,8 +9,10 @@ import net.minecraft.world.phys.Vec3;
 
 public final class CombatantState {
 	private int dashCooldown;
+	private int dashCooldownMax = CombatRules.DASH_COOLDOWN;
 	private int thrustCooldown;
 	private int heavyCooldown;
+	private int heavyRecovery;
 	private int slideCooldown;
 	private boolean doubleJumpReady = true;
 	private int groundTicks;
@@ -43,6 +45,9 @@ public final class CombatantState {
 		}
 		if (this.heavyCooldown > 0) {
 			this.heavyCooldown--;
+		}
+		if (this.heavyRecovery > 0) {
+			this.heavyRecovery--;
 		}
 		if (this.slideCooldown > 0) {
 			this.slideCooldown--;
@@ -79,8 +84,17 @@ public final class CombatantState {
 		return this.dashCooldown;
 	}
 
+	public int dashCooldownMax() {
+		return this.dashCooldownMax;
+	}
+
 	public void startDashCooldown() {
-		this.dashCooldown = CombatRules.DASH_COOLDOWN;
+		this.startDashCooldown(CombatRules.DASH_COOLDOWN);
+	}
+
+	public void startDashCooldown(int ticks) {
+		this.dashCooldown = ticks;
+		this.dashCooldownMax = Math.max(1, ticks);
 	}
 
 	public boolean doubleJumpReady() {
@@ -143,7 +157,11 @@ public final class CombatantState {
 	}
 
 	public boolean heavyReady() {
-		return this.heavyCooldown <= 0 && !this.heavyCharging;
+		return this.heavyCooldown <= 0 && !this.heavyCharging && this.heavyRecovery <= 0;
+	}
+
+	public boolean heavyLocked() {
+		return this.heavyCharging || this.heavyRecovery > 0;
 	}
 
 	public boolean heavyCharging() {
@@ -166,6 +184,7 @@ public final class CombatantState {
 
 	public void startHeavyCooldown() {
 		this.heavyCooldown = CombatRules.HEAVY_COOLDOWN;
+		this.heavyRecovery = CombatRules.HEAVY_RECOVERY_TICKS;
 	}
 
 	public void cancelHeavy() {
@@ -178,6 +197,14 @@ public final class CombatantState {
 
 	public boolean parrying() {
 		return this.parryWindow > 0;
+	}
+
+	public int parryWindow() {
+		return this.parryWindow;
+	}
+
+	public boolean parryPerfect() {
+		return this.parryWindow > CombatRules.PARRY_WINDOW - CombatRules.PARRY_PERFECT_TICKS;
 	}
 
 	public int parryCooldown() {

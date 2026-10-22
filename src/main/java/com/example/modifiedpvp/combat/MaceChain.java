@@ -282,13 +282,12 @@ public final class MaceChain {
 	private static void launchThrower(ServerPlayer player, Vec3 center, double falloff) {
 		Vec3 away = player.getBoundingBox().getCenter().subtract(center);
 		Vec3 direction = away.lengthSqr() < 1.0E-4 ? new Vec3(0.0, 1.0, 0.0) : away.normalize();
-		Vec3 motion = player.getDeltaMovement().add(direction.scale(CombatRules.MACE_SHOCKWAVE_SELF_STRENGTH * falloff));
-		player.setDeltaMovement(motion.x, Math.max(motion.y, CombatRules.MACE_SHOCKWAVE_LIFT * falloff), motion.z);
+		double strength = CombatRules.MACE_PVP_SELF_STRENGTH * falloff;
+		Vec3 motion = player.getDeltaMovement().add(direction.scale(strength));
+		player.setDeltaMovement(motion.x, Math.max(motion.y, CombatRules.MACE_SHOCKWAVE_LIFT * falloff * 0.65), motion.z);
 		player.setOnGround(false);
 		player.hurtMarked = true;
-		player.currentImpulseImpactPos = player.position();
-		player.setIgnoreFallDamageFromCurrentImpulse(true);
-		player.applyPostImpulseGraceTime(10);
+		player.applyPostImpulseGraceTime(6);
 	}
 
 	private static void updateDisplays(Throw active, Vec3 anchor) {

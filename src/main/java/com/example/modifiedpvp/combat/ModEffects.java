@@ -19,6 +19,11 @@ public final class ModEffects {
 	public static final Holder<MobEffect> STUN = Registry.registerForHolder(BuiltInRegistries.MOB_EFFECT, ModifiedPvP.id("stun"), new StunEffect()
 			.addAttributeModifier(Attributes.MOVEMENT_SPEED, ModifiedPvP.id("effect.stun"), -1.0, AttributeModifier.Operation.ADD_MULTIPLIED_TOTAL)
 			.addAttributeModifier(Attributes.JUMP_STRENGTH, ModifiedPvP.id("effect.stun"), -1.0, AttributeModifier.Operation.ADD_MULTIPLIED_TOTAL));
+	public static final Holder<MobEffect> INTERRUPTED = Registry.registerForHolder(BuiltInRegistries.MOB_EFFECT, ModifiedPvP.id("interrupted"), new FlagEffect(0x7AD7FF));
+	public static final Holder<MobEffect> OFF_BALANCE = Registry.registerForHolder(BuiltInRegistries.MOB_EFFECT, ModifiedPvP.id("off_balance"), new FlagEffect(0xE8C36A)
+			.addAttributeModifier(Attributes.MOVEMENT_SPEED, ModifiedPvP.id("effect.off_balance"), -0.4, AttributeModifier.Operation.ADD_MULTIPLIED_TOTAL)
+			.addAttributeModifier(Attributes.JUMP_STRENGTH, ModifiedPvP.id("effect.off_balance"), -0.5, AttributeModifier.Operation.ADD_MULTIPLIED_TOTAL));
+	public static final Holder<MobEffect> GUARD_EXPOSED = Registry.registerForHolder(BuiltInRegistries.MOB_EFFECT, ModifiedPvP.id("guard_exposed"), new FlagEffect(0xE08A6A));
 
 	private ModEffects() {
 	}
@@ -28,6 +33,26 @@ public final class ModEffects {
 
 	public static boolean isStunned(LivingEntity entity) {
 		return entity.hasEffect(STUN);
+	}
+
+	public static boolean isInterrupted(LivingEntity entity) {
+		return entity.hasEffect(INTERRUPTED);
+	}
+
+	public static boolean isOffBalance(LivingEntity entity) {
+		return entity.hasEffect(OFF_BALANCE);
+	}
+
+	public static boolean isGuardExposed(LivingEntity entity) {
+		return entity.hasEffect(GUARD_EXPOSED);
+	}
+
+	public static boolean blocksAbilities(LivingEntity entity) {
+		return isStunned(entity) || isInterrupted(entity);
+	}
+
+	public static boolean blocksMovementSkills(LivingEntity entity) {
+		return blocksAbilities(entity) || isOffBalance(entity);
 	}
 
 	private static final class StunEffect extends MobEffect {
@@ -54,6 +79,12 @@ public final class ModEffects {
 				player.stopUsingItem();
 			}
 			return true;
+		}
+	}
+
+	private static final class FlagEffect extends MobEffect {
+		private FlagEffect(int color) {
+			super(MobEffectCategory.HARMFUL, color);
 		}
 	}
 }

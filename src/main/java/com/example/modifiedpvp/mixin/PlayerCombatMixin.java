@@ -6,6 +6,7 @@ import com.example.modifiedpvp.combat.CombatantAccess;
 import com.example.modifiedpvp.combat.CombatantState;
 import com.example.modifiedpvp.combat.ComboSpecials;
 import com.example.modifiedpvp.combat.ModEffects;
+import com.example.modifiedpvp.combat.MultiHit;
 import com.example.modifiedpvp.combat.SpearCombat;
 
 import net.minecraft.server.level.ServerLevel;
@@ -49,7 +50,7 @@ public abstract class PlayerCombatMixin implements CombatantAccess {
 			return;
 		}
 		Player player = (Player) (Object) this;
-		if (!this.modifiedpvp$state.sliding() && !ComboSpecials.isGuarded(player)) {
+		if (!ComboSpecials.isGuarded(player)) {
 			return;
 		}
 		callback.setReturnValue(true);
@@ -66,8 +67,34 @@ public abstract class PlayerCombatMixin implements CombatantAccess {
 			this.modifiedpvp$hurtTracked.push(true);
 			return;
 		}
-		if (CombatActions.tryParryHit(player, source, amount)) {
+		float scaled = MultiHit.incoming(player, source, amount);
+		if (scaled < amount) {
+			this.modifiedpvp$hurtTracked.push(false);
+			if (scaled <= 0.0F) {
+				callback.setReturnValue(false);
+				return;
+			}
+			MultiHit.beginApply();
+			try {
+				callback.setReturnValue(player.hurtServer(level, source, scaled));
+			} finally {
+				MultiHit.endApply();
+			}
+			return;
+		}
+		float parried = CombatActions.tryParryHit(player, source, amount);
+		if (parried < 0.0F) {
 			callback.setReturnValue(false);
+			this.modifiedpvp$hurtTracked.push(false);
+			return;
+		}
+		if (parried < amount) {
+			CombatActions.beginParryMitigate();
+			try {
+				callback.setReturnValue(player.hurtServer(level, source, parried));
+			} finally {
+				CombatActions.endParryMitigate();
+			}
 			this.modifiedpvp$hurtTracked.push(false);
 			return;
 		}
@@ -148,16 +175,11 @@ public abstract class PlayerCombatMixin implements CombatantAccess {
 	@Inject(method = "attack", at = @At("RETURN"))
 	private void modifiedpvp$offhandStrike(Entity target, CallbackInfo callback) {
 		Player player = (Player) (Object) this;
+		if (this.modifiedpvp$attackScale >= CombatRules.COMBO_MIN_STRENGTH && player instanceof ServerPlayer server && target instanceof LivingEntity living
+				&& (living.getLastHurtByMob() == player && living.getLastHurtByMobTimestamp() == living.tickCount)
+				&& (living instanceof Mob || living instanceof Player)) {
+			ComboSpecials.onMeleeHit(server);
+		}
 		CombatActions.strikeOffhand(player, target, this.modifiedpvp$attackScale);
-		if (this.modifiedpvp$attackScale < CombatRules.COMBO_MIN_STRENGTH || !(player instanceof ServerPlayer server) || !(target instanceof LivingEntity living)) {
-			return;
-		}
-		if (living.getLastHurtByMob() != player || living.getLastHurtByMobTimestamp() != living.tickCount) {
-			return;
-		}
-		if (!(living instanceof Mob) && !(living instanceof Player)) {
-			return;
-		}
-		ComboSpecials.onMeleeHit(server);
 	}
 }

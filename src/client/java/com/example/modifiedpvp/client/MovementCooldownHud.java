@@ -46,16 +46,22 @@ public final class MovementCooldownHud {
 		List<ShownIcon> icons = new ArrayList<>(5);
 		if (state.parrying() || state.parryCooldown() > 0) {
 			boolean parrying = state.parrying();
-			icons.add(new ShownIcon(PARRY, parrying ? 1.0F : ready(state.parryCooldown(), state.parryCooldownMax()), parrying, parrying ? 0xFF7AD7FF : 0));
+			int parryOutline = 0;
+			if (parrying) {
+				parryOutline = state.parryPerfect() ? 0xFF9BE08A : 0xFF7AD7FF;
+			}
+			icons.add(new ShownIcon(PARRY, parrying ? 1.0F : ready(state.parryCooldown(), state.parryCooldownMax()), parrying, parryOutline));
 		}
 		if (state.dashCooldown() > 0) {
-			icons.add(new ShownIcon(DASH, ready(state.dashCooldown(), CombatRules.DASH_COOLDOWN), false, 0));
+			icons.add(new ShownIcon(DASH, ready(state.dashCooldown(), state.dashCooldownMax()), false, 0));
 		}
 		if (state.sliding() || state.slideCooldown() > 0) {
 			boolean sliding = state.sliding();
 			icons.add(new ShownIcon(SLIDE, sliding ? 1.0F : ready(state.slideCooldown(), CombatRules.SLIDE_COOLDOWN), sliding, sliding ? 0xFF7AD7FF : 0));
 		}
-		if (!state.doubleJumpReady()) {
+		if (!player.onGround() && state.doubleJumpReady()) {
+			icons.add(new ShownIcon(JUMP, 1.0F, true, 0xFF9BE08A));
+		} else if (!state.doubleJumpReady()) {
 			icons.add(new ShownIcon(JUMP, 1.0F, true, 0));
 		}
 		if (WeaponStats.isSpear(player.getMainHandItem())) {

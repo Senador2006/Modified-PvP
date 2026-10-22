@@ -18,8 +18,10 @@ import net.minecraft.world.entity.Mob;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.enchantment.Enchantments;
+import net.minecraft.world.level.ClipContext;
 import net.minecraft.world.level.block.Blocks;
 import net.minecraft.world.level.block.state.BlockState;
+import net.minecraft.world.phys.HitResult;
 import net.minecraft.world.phys.Vec3;
 import net.minecraft.world.entity.projectile.arrow.ThrownTrident;
 
@@ -43,13 +45,22 @@ public final class TridentEffects {
 			return;
 		}
 
+		if (!ControlGuard.tryApply(target, ControlGuard.Kind.PULL)) {
+			return;
+		}
 		int pullTicks = CombatRules.LOYALTY_PULL_BASE_TICKS + loyalty * CombatRules.LOYALTY_PULL_TICKS_PER_LEVEL;
 		int stunTicks = CombatRules.LOYALTY_STUN_BASE_TICKS + loyalty * CombatRules.LOYALTY_STUN_TICKS_PER_LEVEL;
 		double speed = CombatRules.LOYALTY_PULL_SPEED + loyalty * CombatRules.LOYALTY_PULL_SPEED_PER_LEVEL;
+		boolean pvp = target instanceof Player;
 		HOOKS.removeIf(hook -> hook.target == target || !hook.target.isAlive());
-		HOOKS.add(new Hook(target, livingOwner, pullTicks, stunTicks, speed));
+		HOOKS.add(new Hook(target, livingOwner, pullTicks, pvp ? 0 : stunTicks, speed, pvp));
 		target.stopRiding();
-		applyStun(target, livingOwner, stunTicks);
+		ControlGuard.mark(target, ControlGuard.Kind.PULL);
+		if (pvp) {
+			ControlGuard.offBalance(target, livingOwner, CombatRules.TRIDENT_PVP_EXPOSE_TICKS);
+		} else {
+			applyStun(target, livingOwner, stunTicks);
+		}
 		if (livingOwner instanceof ServerPlayer player) {
 			ComboSpecials.onTridentPull(player, target);
 		}
@@ -61,7 +72,7 @@ public final class TridentEffects {
 		if (!(trident.level() instanceof ServerLevel level)) {
 			return;
 		}
-		if (ModEnchantments.level(level, ModEnchantments.DRAIN, tridentStack(trident)) <= 0) {
+		if (ModEnchantments.level(level, ModEnchantments.DRAIN, tridentStack(trident)) <= 0 || !ModGameRules.drainWater(level)) {
 			return;
 		}
 		Vec3 from = new Vec3(trident.xo, trident.yo, trident.zo);
@@ -86,14 +97,18 @@ public final class TridentEffects {
 		while (iterator.hasNext()) {
 			Hook hook = iterator.next();
 			LivingEntity target = hook.target;
-			if (!target.isAlive() || target.isRemoved() || hook.stunTicks <= 0) {
+			if (!target.isAlive() || target.isRemoved() || (hook.stunTicks <= 0 && hook.pullTicks <= 0)) {
 				iterator.remove();
 				continue;
 			}
 			if (hook.pullTicks > 0 && hook.owner.isAlive() && !hook.owner.isRemoved()) {
-				pull(target, hook.owner, hook.speed);
-				hook.pullTicks--;
-			} else {
+				if (!lineOfSight(target, hook.owner)) {
+					hook.pullTicks = 0;
+				} else {
+					pull(target, hook.owner, hook.speed);
+					hook.pullTicks--;
+				}
+			} else if (!hook.pvpLite) {
 				Vec3 motion = target.getDeltaMovement();
 				target.setDeltaMovement(motion.x * 0.05, motion.y, motion.z * 0.05);
 				target.hurtMarked = true;
@@ -102,10 +117,14 @@ public final class TridentEffects {
 			if (target instanceof Mob mob) {
 				mob.getNavigation().stop();
 			}
-			if (target.getEffect(MobEffects.SLOWNESS) == null) {
-				applyStun(target, hook.owner, hook.stunTicks);
+			if (!hook.pvpLite) {
+				if (target.getEffect(MobEffects.SLOWNESS) == null) {
+					applyStun(target, hook.owner, hook.stunTicks);
+				}
+				if (hook.stunTicks > 0) {
+					hook.stunTicks--;
+				}
 			}
-			hook.stunTicks--;
 		}
 	}
 
@@ -116,6 +135,13 @@ public final class TridentEffects {
 			}
 		}
 		return false;
+	}
+
+	private static boolean lineOfSight(LivingEntity target, LivingEntity owner) {
+		if (!(target.level() instanceof ServerLevel level)) {
+			return false;
+		}
+		return level.clip(new ClipContext(target.getEyePosition(), owner.getEyePosition(), ClipContext.Block.COLLIDER, ClipContext.Fluid.NONE, target)).getType() == HitResult.Type.MISS;
 	}
 
 	private static void pull(LivingEntity target, LivingEntity owner, double speed) {
@@ -180,13 +206,15 @@ public final class TridentEffects {
 		private int pullTicks;
 		private int stunTicks;
 		private final double speed;
+		private final boolean pvpLite;
 
-		private Hook(LivingEntity target, LivingEntity owner, int pullTicks, int stunTicks, double speed) {
+		private Hook(LivingEntity target, LivingEntity owner, int pullTicks, int stunTicks, double speed, boolean pvpLite) {
 			this.target = target;
 			this.owner = owner;
 			this.pullTicks = pullTicks;
 			this.stunTicks = stunTicks;
 			this.speed = speed;
+			this.pvpLite = pvpLite;
 		}
 	}
 }
