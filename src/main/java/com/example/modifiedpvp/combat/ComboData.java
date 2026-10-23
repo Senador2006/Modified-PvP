@@ -61,6 +61,9 @@ final class ComboData {
 	long maceCooldownUntil;
 	boolean maceEmpowered;
 
+	long crossbowCooldownUntil;
+	long spearCooldownUntil;
+
 	ComboData copy() {
 		ComboData copy = new ComboData();
 		copy.swordKills = this.swordKills;
@@ -100,6 +103,8 @@ final class ComboData {
 		copy.maceWindowUntil = this.maceWindowUntil;
 		copy.maceCooldownUntil = this.maceCooldownUntil;
 		copy.maceEmpowered = this.maceEmpowered;
+		copy.crossbowCooldownUntil = this.crossbowCooldownUntil;
+		copy.spearCooldownUntil = this.spearCooldownUntil;
 		return copy;
 	}
 
@@ -169,6 +174,8 @@ final class ComboData {
 		data.maceWindowUntil = tag.getLongOr("mace_window", 0L);
 		data.maceCooldownUntil = tag.getLongOr("mace_cooldown", 0L);
 		data.maceEmpowered = tag.getBooleanOr("mace_empowered", false);
+		data.crossbowCooldownUntil = tag.getLongOr("crossbow_cooldown", 0L);
+		data.spearCooldownUntil = tag.getLongOr("spear_cooldown", 0L);
 		return data;
 	}
 
@@ -211,6 +218,8 @@ final class ComboData {
 		tag.putLong("mace_window", data.maceWindowUntil);
 		tag.putLong("mace_cooldown", data.maceCooldownUntil);
 		tag.putBoolean("mace_empowered", data.maceEmpowered);
+		tag.putLong("crossbow_cooldown", data.crossbowCooldownUntil);
+		tag.putLong("spear_cooldown", data.spearCooldownUntil);
 		return tag;
 	}
 
@@ -255,6 +264,8 @@ final class ComboData {
 		buf.writeLong(data.maceWindowUntil);
 		buf.writeLong(data.maceCooldownUntil);
 		buf.writeBoolean(data.maceEmpowered);
+		buf.writeLong(data.crossbowCooldownUntil);
+		buf.writeLong(data.spearCooldownUntil);
 	}
 
 	private static ComboData decode(RegistryFriendlyByteBuf buf) {
@@ -299,6 +310,8 @@ final class ComboData {
 		data.maceWindowUntil = buf.readLong();
 		data.maceCooldownUntil = buf.readLong();
 		data.maceEmpowered = buf.readBoolean();
+		data.crossbowCooldownUntil = buf.readLong();
+		data.spearCooldownUntil = buf.readLong();
 		return data;
 	}
 }

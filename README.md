@@ -4,7 +4,7 @@ Movimentação e armas extras para PvP no Minecraft **1.21.11**, feito para Fabr
 
 O cliente prevê o movimento. O dano, o empurrão, os projéteis e os especiais de combo só valem no servidor.
 
-[![Versão](https://img.shields.io/badge/vers%C3%A3o-1.2.2-4c8bf5?style=flat-square)](releases/modifiedpvp-1.2.2.jar)
+[![Versão](https://img.shields.io/badge/vers%C3%A3o-1.3.0-4c8bf5?style=flat-square)](releases/modifiedpvp-1.3.0.jar)
 [![Minecraft](https://img.shields.io/badge/Minecraft-1.21.11-62b47a?style=flat-square)](https://fabricmc.net/develop/)
 [![Fabric Loader](https://img.shields.io/badge/Fabric_Loader-0.19.5+-dbd0b4?style=flat-square)](https://fabricmc.net/)
 [![Fabric API](https://img.shields.io/badge/Fabric_API-0.141.6-c8a2c8?style=flat-square)](https://modrinth.com/mod/fabric-api)
@@ -13,13 +13,13 @@ O cliente prevê o movimento. O dano, o empurrão, os projéteis e os especiais 
 
 ## Download
 
-**[modifiedpvp-1.2.2.jar](releases/modifiedpvp-1.2.2.jar)**
+**[modifiedpvp-1.3.0.jar](releases/modifiedpvp-1.3.0.jar)**
 
 ## Instalação
 
 1. Instale o [Fabric Loader](https://fabricmc.net/use/installer/) para o Minecraft 1.21.11.
 2. Baixe a [Fabric API](https://modrinth.com/mod/fabric-api) para a 1.21.11.
-3. Coloque a Fabric API e o `modifiedpvp-1.2.2.jar` na pasta `mods` do Minecraft.
+3. Coloque a Fabric API e o `modifiedpvp-1.3.0.jar` na pasta `mods` do Minecraft.
 4. Em servidor, o mod precisa estar no servidor **e** em todos os clientes.
 
 ## Requisitos
@@ -41,11 +41,11 @@ As teclas ficam na categoria **Modified PvP** e podem ser trocadas em Controles.
 | Pulo duplo | `Espaço` no ar | Solte e aperte o pulo de novo depois de sair do chão. Recarrega ao aterrissar. |
 | Deslize | `C` enquanto corre | Abaixa o corpo, acelera e passa em vãos de 1 bloco. |
 | Parry | `X` | Abre uma janela curta de defesa. Melee perfeito inverte a iniciativa. Projétil é anulado. Explosão é mitigada. |
-| Estocada | `V` ou clique direito com espada | Avança e atinge o primeiro alvo à frente, mesmo colado em você. Gasta a carga do ataque. |
+| Estocada | `V` ou clique direito com uma espada | Avança e atinge o primeiro alvo à frente, mesmo colado em você. Gasta a carga do ataque. Com duas espadas, o direito vira o golpe conjunto; a estocada fica na tecla `V`. |
 | Ataque pesado | Segure o clique direito com machado | Carrega olhando para qualquer lugar, mesmo com escudo na outra mão. Solte para golpear. A barra aparece na hotbar de ação. |
 | Maça acorrentada | Clique direito com a maça | Lança a maça presa a uma corrente. Ela volta sozinha para a mão. |
 | Trocar flecha | `G` com o arco na mão | Passa para a próxima flecha do bundle. |
-| Contra Golpe | `Z` com a lança na mão principal | Postura frontal curta. Na janela perfeita anula o melee e solta na hora duas estocadas no atacante. A mesma tecla dispara Reação Total se o alvo estiver com Defesa Rompida. |
+| Contra Golpe | `Z` com a lança na mão principal | Postura frontal curta. Na janela perfeita anula o melee e solta na hora duas estocadas no atacante. A mesma tecla dispara Reação Total se o alvo estiver com Defesa Rompida. A charge natural na mesma abertura dispara Investida Implacável. |
 
 Comida ou lança na mão secundária continuam usando o clique direito. O escudo também, menos quando o machado está na mão principal: aí o clique carrega o ataque pesado. A estocada ainda sai na tecla `V`.
 
@@ -84,13 +84,15 @@ Na janela perfeita, aquele golpe é anulado, os dois param por 0,5 s e sai uma e
 
 **Reação Total** é o finalizador perfurante na tecla `Z`, só com o alvo marcado e a técnica desbloqueada. Dano **3×** do base (3,5× se Romper III causou a ruptura; 2× em chefes). No PvP o teto é 18 (22 no aprimorado) ou 55% da vida máxima.
 
+**Investida Implacável** é o finalizador cinético da mesma abertura: uma Charge vanilla válida contra o alvo marcado empurra com mais direção. Não multiplica dano pela velocidade e não transforma jab comum em investida.
+
 **Colapso Circular** é o outro finalizador da mesma abertura: uma estocada (jab) no alvo com Defesa Rompida vira um giro em área. O alvo marcado leva 2× (2,4× se a ruptura veio de Romper III). Mobs perto tomam uma fração e são empurrados; jogadores secundários levam pouco dano. A estocada automática do Contra Golpe perfeito **não** dispara o giro.
 
-Os dois finalizadores compartilham a abertura e a recarga de 5 s. Quem usar um consome a Defesa Rompida. Sem insta-kill.
+Os três finalizadores compartilham a abertura e a recarga de 5 s. Quem usar um consome a Defesa Rompida. Sem insta-kill. O perfil recente da Pressão só sugere o estilo; o jogador ainda escolhe o gatilho.
 
 ### Espada
 
-Uma espada na mão principal estoca. Com outra na mão secundária, o clique acerta com as duas. A segunda mão causa uma fração do dano.
+Uma espada na mão principal estoca com `V` ou clique direito. Com outra na mão secundária, o esquerdo ataca só com a principal e o direito faz o golpe conjunto. A segunda mão causa uma fração do dano.
 
 ### Machado
 
@@ -126,24 +128,23 @@ O **Grappling Hook** puxa você até o ponto em que a flecha ou o fogo de artif�
 
 ## Especiais
 
-Cada arma tem um combo na aba **Especiais** dos advancements. O efeito só existe depois de desbloquear o advancement. A barra de ação mostra o progresso do objetivo e, depois, a contagem do combo.
+Cada arma tem um desbloqueio na aba **Especiais**. Depois do advancement, o servidor lê **como** você usa a arma e abre **uma** oportunidade contextual. O próximo comando manual correspondente executa o finalizador. Nada dispara sozinho.
 
-O golpe precisa acertar um mob ou um jogador. Na espada e nas duas espadas, o golpe tem que estar carregado, e a estocada também conta. Levar dano zera os combos que podem ser interrompidos. Um bloqueio completo não conta como dano. Nos combos sem interrupção, você não sofre dano entre os golpes.
+O golpe precisa acertar um mob ou um jogador. Pressionar botão no vazio não conta. Levar dano zera os estilos da espada, das duas espadas, do arco, da besta e do escudo. Machado, maça e tridente não caem por dano. A recarga é por família e não some ao trocar de slot, item idêntico, logout ou dimensão.
 
-Se passar tempo demais entre um acerto e o outro, a sequência recomeça: 2 s na espada e nas duas espadas, 5 s no machado e no escudo, 4 s no arco, 8 s na maça e 12 s no tridente.
+Oportunidades e buffs temporários zeram na morte, no logout e ao trocar de mundo. O progresso de desbloqueio permanece. Quem já tinha o advancement da 1.2.2 usa as variantes novas sem farm extra.
 
-Combos e buffs ativos zeram na morte, no logout e ao trocar de mundo. O progresso de desbloqueio permanece.
-
-| Arma | Desbloqueio | Combo | Efeito | Recarga | Interrompe |
+| Arma | Desbloqueio | Estilos | Finalizadores | Recarga | Interrompe |
 | --- | --- | --- | --- | --- | --- |
-| Espada | Mate 50 mobs com a espada | 5 golpes misturando ataque e estocada | O próximo golpe carregado é um crítico | 60 s | Sim |
-| Duas espadas | Mate 50 mobs com as duas na mão | 7 golpes alternando as mãos | Rajada curta de velocidade de ataque. Errar a segunda mão te expõe | 120 s | Sim |
-| Machado | Acerte 20 ataques pesados | 3 ataques pesados | O próximo pesado causa dano extra ou quebra a guarda. Em PvP não atordoa | 50 s | Não |
-| Arco | Acerte 10 mobs diferentes | 7 acertos | 3 disparos de precisão com puxada instantânea | 30 s | Sim |
-| Tridente | Puxe um afogado com Lealdade | 5 puxadas | O último alvo fica exposto por pouco tempo | 60 s | Não |
-| Escudo | Bloqueie 30 golpes | 3 bloqueios | O próximo bloqueio empurra o atacante com força | 45 s | Sim |
-| Maça | Acerte 10 arremessos da corrente | 3 acertos, na queda ou na corrente | O próximo golpe puxa os alvos. Lentidão só em mobs | 70 s | Não |
-| Lança | Acerte 10 Contra Golpes perfeitos em mobs hostis | Pressão até 100, sem ordem fixa | Reação Total (`Z`) ou Colapso Circular (estocada) na Defesa Rompida | 5 s | Não |
+| Espada | Mate 50 mobs com a espada | Ritmo, estocada, parry | Corte Relâmpago, Perfuração Precisa, Contra-Corte | 60 s | Sim |
+| Duas espadas | Mate 50 mobs com as duas na mão | Alternância, pressão, abertura | Corte Cruzado, Rajada Dupla, Corte de Abertura | 120 s | Sim |
+| Machado | Acerte 20 ataques pesados | Pesado direto ou bloqueado | Golpe Soberano, Ruína da Guarda | 50 s | Não |
+| Arco | Acerte 10 mobs diferentes | Acerto carregado ou ignição de carrinho | Disparo Certeiro, Ignição Perfeita | 30 s | Sim |
+| Besta | Mesmo advancement do arco | Foguete em grupo ou no mesmo alvo | Barragem Explosiva, Descarga Concentrada | 40 s | Sim |
+| Tridente | Puxe um afogado com Lealdade | Retorno, maré, tempestade | Arremesso Soberano, Investida das Marés, Julgamento do Trovão | 60 s | Não |
+| Escudo | Bloqueie 30 golpes | Guarda, timing, aliado | Repulsão, Choque de Escudo, Intervenção | 45 s | Sim |
+| Maça | Acerte 10 arremessos da corrente | Entidade ou bloco | Impacto de Retorno, Repulsão | 70 s | Não |
+| Lança | Acerte 10 Contra Golpes perfeitos em mobs hostis | Perfil da Pressão | Reação Total (`Z`), Investida Implacável (charge) ou Colapso Circular (estocada) | 5 s | Não |
 
 ## Encantamentos
 
@@ -180,7 +181,7 @@ Lealdade continua sendo o encantamento vanilla. O mod só muda o que acontece no
 
 Os encantamentos de maça, arco, besta, tridente e Romper da lança não saem na mesa nem com aldeões.
 
-Em servidor, o arquivo `config/modifiedpvp.properties` aceita `unlockSpecials=true` para liberar todos os especiais sem advancements (arenas) e `drainWater=false` para impedir o Drenar de apagar água.
+Em servidor, o arquivo `config/modifiedpvp.properties` aceita `unlockSpecials=true` para liberar todos os especiais sem advancements (arenas), `drainWater=false` para impedir o Drenar de apagar água e `adaptiveDebug=true` para logar estilo/finalizador. Os pesos e recargas adaptativos também podem ser calibrados nesse arquivo (`adaptive.window.sword`, `adaptive.evidence.axe`, etc.).
 
 ### Afogados
 
@@ -195,6 +196,16 @@ Afogados que nascem com tridente deixam cair o tridente em 70% das mortes (no va
 O jar sai em `build/libs/modifiedpvp-<versão>.jar`.
 
 ## Novidades
+
+### 1.3.0
+
+- Especiais passam a ler o **estilo de uso** da arma, não só a contagem linear de golpes. Uma oportunidade contextual aparece por tempo limitado e some depois da tentativa válida.
+- Espada: Corte Relâmpago, Perfuração Precisa e Contra-Corte. Duas espadas (Opção A): esquerdo = principal, direito = golpe conjunto; Corte Cruzado, Rajada Dupla e Corte de Abertura.
+- Machado: Golpe Soberano e Ruína da Guarda. Maça acorrentada: Impacto de Retorno e Repulsão. Smash e Wind Burst vanilla iguais.
+- Tridente útil em qualquer clima: Arremesso Soberano, Investida das Marés e Julgamento do Trovão. Relâmpago só com Condutividade vanilla em tempestade.
+- Arco: Disparo Certeiro e Ignição Perfeita. Sem bônus balístico em TNT minecart e sem explosão extra. Besta: Barragem Explosiva e Descarga Concentrada nos foguetes.
+- Lança: Investida Implacável na Charge durante a mesma Defesa Rompida. Escudo: Repulsão, Choque de Escudo e Intervenção, sem empilhar com parry.
+- HUD discreto de família/estilo/recarga. Advancements antigos continuam válidos. Checklist: [docs/Modified_PvP_1.3.0_Testes.md](docs/Modified_PvP_1.3.0_Testes.md).
 
 ### 1.2.2
 

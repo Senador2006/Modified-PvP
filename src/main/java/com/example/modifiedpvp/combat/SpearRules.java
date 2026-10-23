@@ -67,6 +67,9 @@ public final class SpearRules {
 
 	public static final int PERFECT_COUNTER_GOAL = 10;
 
+	public static final double KINETIC_MIN_SPEED = 0.22;
+	public static final double KINETIC_KNOCKBACK = 0.85;
+
 	private SpearRules() {
 	}
 }

@@ -57,6 +57,11 @@ public final class SpearPressure {
 			entry.lastShield = now;
 		}
 		entry.lastGain = now;
+		switch (cause) {
+			case RIPOSTE, FOLLOW_UP -> entry.counter += points;
+			case CHARGE -> entry.kinetic += points;
+			default -> entry.formation += points;
+		}
 		entry.value = Math.min(SpearRules.PRESSURE_MAX, entry.value + points);
 		if (entry.value >= SpearRules.PRESSURE_MAX) {
 			Opening current = OPENINGS.get(target.getUUID());
@@ -228,7 +233,7 @@ public final class SpearPressure {
 			case BOSS -> SpearRules.BREAK_BOSS_IMMUNITY_TICKS;
 			case COMMON -> SpearRules.BREAK_MOB_IMMUNITY_TICKS;
 		};
-		Opening opening = new Opening(target, attacker.getUUID(), now + duration, now + immunity, enhanced && category != Category.BOSS, category);
+		Opening opening = new Opening(target, attacker.getUUID(), now + duration, now + immunity, enhanced && category != Category.BOSS, category, dominant(PRESSURE.get(new PairKey(attacker.getUUID(), target.getUUID()))));
 		OPENINGS.put(target.getUUID(), opening);
 		attacker.displayClientMessage(Component.translatable("combat.modifiedpvp.spear.broken"), true);
 		if (target instanceof ServerPlayer victim) {
@@ -300,7 +305,27 @@ public final class SpearPressure {
 				enhanced = opening.enhanced;
 			}
 		}
-		ModNetworking.syncSpearPressure(attacker, target.getId(), Math.round(value), broken, enhanced, immune);
+		ModNetworking.syncSpearPressure(attacker, target.getId(), Math.round(value), broken, enhanced, immune, styleHint(opening, attacker));
+	}
+
+	private static int styleHint(Opening opening, ServerPlayer attacker) {
+		if (opening != null && opening.owner.equals(attacker.getUUID()) && !opening.consumed) {
+			return opening.style.ordinal();
+		}
+		return Style.NONE.ordinal();
+	}
+
+	private static Style dominant(Entry entry) {
+		if (entry == null) {
+			return Style.FORMATION;
+		}
+		if (entry.counter >= entry.kinetic && entry.counter >= entry.formation) {
+			return Style.COUNTER;
+		}
+		if (entry.kinetic >= entry.formation) {
+			return Style.KINETIC;
+		}
+		return Style.FORMATION;
 	}
 
 	private static boolean eligible(ServerPlayer attacker, LivingEntity target) {
@@ -327,12 +352,22 @@ public final class SpearPressure {
 		BOSS
 	}
 
+	enum Style {
+		NONE,
+		COUNTER,
+		KINETIC,
+		FORMATION
+	}
+
 	private record PairKey(UUID attacker, UUID target) {
 	}
 
 	private static final class Entry {
 		private LivingEntity target;
 		private float value;
+		private float counter;
+		private float kinetic;
+		private float formation;
 		private long lastGain;
 		private long lastCharge = Long.MIN_VALUE / 2;
 		private long lastShield = Long.MIN_VALUE / 2;
@@ -349,17 +384,19 @@ public final class SpearPressure {
 		final long immunityUntil;
 		final boolean enhanced;
 		final Category category;
+		final Style style;
 		long until;
 		boolean consumed;
 		boolean closed;
 
-		private Opening(LivingEntity target, UUID owner, long until, long immunityUntil, boolean enhanced, Category category) {
+		private Opening(LivingEntity target, UUID owner, long until, long immunityUntil, boolean enhanced, Category category, Style style) {
 			this.target = target;
 			this.owner = owner;
 			this.until = until;
 			this.immunityUntil = immunityUntil;
 			this.enhanced = enhanced;
 			this.category = category;
+			this.style = style == null ? Style.FORMATION : style;
 		}
 	}
 }

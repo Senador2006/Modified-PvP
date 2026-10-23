@@ -19,6 +19,7 @@ public final class ModNetworking {
 		PayloadTypeRegistry.playS2C().register(ParryImpactPayload.TYPE, ParryImpactPayload.CODEC);
 		PayloadTypeRegistry.playS2C().register(SpearStatePayload.TYPE, SpearStatePayload.CODEC);
 		PayloadTypeRegistry.playS2C().register(SpearPressurePayload.TYPE, SpearPressurePayload.CODEC);
+		PayloadTypeRegistry.playS2C().register(AdaptiveStatePayload.TYPE, AdaptiveStatePayload.CODEC);
 		ServerPlayNetworking.registerGlobalReceiver(CombatActionPayload.TYPE, (payload, context) -> {
 			CombatAction action = payload.action();
 			if (action == null) {
@@ -59,6 +60,7 @@ public final class ModNetworking {
 			case CYCLE_ARROW -> BowFeatures.cycleBundleArrow(player);
 			case PARRY -> CombatActions.tryParry(player);
 			case SPEAR_COUNTER -> SpearCombat.tryCounter(player);
+			case COMBINED_STRIKE -> CombatActions.tryCombinedStrike(player);
 		}
 	}
 
@@ -68,9 +70,15 @@ public final class ModNetworking {
 		}
 	}
 
-	public static void syncSpearPressure(ServerPlayer player, int entityId, int pressure, int brokenTicks, boolean enhanced, boolean immune) {
+	public static void syncAdaptive(ServerPlayer player, AdaptiveStatePayload payload) {
+		if (ServerPlayNetworking.canSend(player, AdaptiveStatePayload.TYPE)) {
+			ServerPlayNetworking.send(player, payload);
+		}
+	}
+
+	public static void syncSpearPressure(ServerPlayer player, int entityId, int pressure, int brokenTicks, boolean enhanced, boolean immune, int style) {
 		if (ServerPlayNetworking.canSend(player, SpearPressurePayload.TYPE)) {
-			ServerPlayNetworking.send(player, new SpearPressurePayload(entityId, pressure, brokenTicks, enhanced, immune));
+			ServerPlayNetworking.send(player, new SpearPressurePayload(entityId, pressure, brokenTicks, enhanced, immune, style));
 		}
 	}
 }

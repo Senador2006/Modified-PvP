@@ -5,6 +5,7 @@ import com.example.modifiedpvp.combat.ComboSpecials;
 
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.entity.Entity;
+import net.minecraft.world.entity.EntityType;
 import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.entity.projectile.arrow.AbstractArrow;
 import net.minecraft.world.entity.projectile.arrow.ThrownTrident;
@@ -50,6 +51,19 @@ public class AbstractArrowMixin implements ArrowVolleyAccess {
 			return;
 		}
 		ComboSpecials.onBowHit(player, living);
+	}
+
+	@Inject(method = "onHitEntity", at = @At("HEAD"))
+	private void modifiedpvp$cartIgnition(EntityHitResult hit, CallbackInfo callback) {
+		AbstractArrow arrow = (AbstractArrow) (Object) this;
+		if (arrow instanceof ThrownTrident || arrow.level().isClientSide() || !(arrow.getOwner() instanceof ServerPlayer player)) {
+			return;
+		}
+		Entity entity = hit.getEntity();
+		if (entity == null || entity.getType() != EntityType.TNT_MINECART) {
+			return;
+		}
+		ComboSpecials.onBowCartIgnition(player);
 	}
 
 	@Inject(method = "onHitEntity", at = @At("HEAD"))

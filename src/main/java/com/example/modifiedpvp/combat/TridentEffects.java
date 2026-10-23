@@ -62,6 +62,9 @@ public final class TridentEffects {
 			applyStun(target, livingOwner, stunTicks);
 		}
 		if (livingOwner instanceof ServerPlayer player) {
+			boolean storm = level.isThundering();
+			boolean channeling = ModEnchantments.level(level, Enchantments.CHANNELING, stack) > 0 && storm;
+			ComboSpecials.onTridentThrowHit(player, target, channeling);
 			ComboSpecials.onTridentPull(player, target);
 		}
 		level.playSound(null, target.getX(), target.getY(), target.getZ(), SoundEvents.TRIDENT_RETURN, SoundSource.PLAYERS, 0.8F, 0.65F);

@@ -229,7 +229,9 @@ public final class MaceChain {
 			center = center.add(face.getStepX() * 0.3, face.getStepY() * 0.3, face.getStepZ() * 0.3);
 		}
 
-		if (hit instanceof EntityHitResult entityHit && entityHit.getEntity() instanceof LivingEntity target) {
+		boolean entityHit = false;
+		if (hit instanceof EntityHitResult entityHitResult && entityHitResult.getEntity() instanceof LivingEntity target) {
+			entityHit = true;
 			DamageSource source = level.damageSources().playerAttack(player);
 			float damage = WeaponStats.attackDamage(active.stack) * CombatRules.MACE_CHAIN_DAMAGE_RATIO;
 			damage = EnchantmentHelper.modifyDamage(level, active.stack, target, source, damage);
@@ -239,7 +241,7 @@ public final class MaceChain {
 		}
 
 		shockwave(level, player, center);
-		ComboSpecials.onMaceChain(player, center);
+		ComboSpecials.onMaceChain(player, center, entityHit);
 		active.stack.hurtAndBreak(1, level, player, item -> {
 		});
 		level.playSound(null, center.x, center.y, center.z, SoundEvents.MACE_SMASH_GROUND_HEAVY, SoundSource.PLAYERS, 1.0F, 1.1F);
@@ -271,7 +273,7 @@ public final class MaceChain {
 				dx = -look.x;
 				dz = -look.z;
 			}
-			living.knockback(CombatRules.MACE_SHOCKWAVE_STRENGTH * falloff, dx, dz);
+			living.knockback(CombatRules.MACE_SHOCKWAVE_STRENGTH * falloff * ComboSpecials.maceShockwaveScale(player), dx, dz);
 			Vec3 motion = living.getDeltaMovement();
 			living.setDeltaMovement(motion.x, Math.max(motion.y, CombatRules.MACE_SHOCKWAVE_LIFT * falloff), motion.z);
 			living.setOnGround(false);
@@ -282,9 +284,9 @@ public final class MaceChain {
 	private static void launchThrower(ServerPlayer player, Vec3 center, double falloff) {
 		Vec3 away = player.getBoundingBox().getCenter().subtract(center);
 		Vec3 direction = away.lengthSqr() < 1.0E-4 ? new Vec3(0.0, 1.0, 0.0) : away.normalize();
-		double strength = CombatRules.MACE_PVP_SELF_STRENGTH * falloff;
+		double strength = CombatRules.MACE_SHOCKWAVE_SELF_STRENGTH * falloff;
 		Vec3 motion = player.getDeltaMovement().add(direction.scale(strength));
-		player.setDeltaMovement(motion.x, Math.max(motion.y, CombatRules.MACE_SHOCKWAVE_LIFT * falloff * 0.65), motion.z);
+		player.setDeltaMovement(motion.x, Math.max(motion.y, CombatRules.MACE_SHOCKWAVE_LIFT * falloff), motion.z);
 		player.setOnGround(false);
 		player.hurtMarked = true;
 		player.applyPostImpulseGraceTime(6);
@@ -368,7 +370,8 @@ public final class MaceChain {
 			return;
 		}
 		ServerPlayer player = active.player;
-		player.getCooldowns().addCooldown(active.stack, CombatRules.MACE_CHAIN_COOLDOWN);
+		ComboSpecials.onMaceReturn(player);
+		player.getCooldowns().addCooldown(active.stack, ComboSpecials.maceReturnCooldown(player));
 		Inventory inventory = player.getInventory();
 		if (inventory.getItem(active.slot).isEmpty()) {
 			inventory.setItem(active.slot, active.stack);

@@ -2,6 +2,7 @@ package com.example.modifiedpvp.client;
 
 import com.example.modifiedpvp.ModifiedPvP;
 import com.example.modifiedpvp.combat.CombatantAccess;
+import com.example.modifiedpvp.network.AdaptiveStatePayload;
 import com.example.modifiedpvp.network.ParryCooldownPayload;
 import com.example.modifiedpvp.network.ParryImpactPayload;
 import com.example.modifiedpvp.network.SpearPressurePayload;
@@ -19,14 +20,17 @@ public class ModifiedPvPClient implements ClientModInitializer {
 		ModKeybinds.register();
 		MovementCooldownHud.register();
 		SpearHud.register();
+		AdaptiveHud.register();
 		HudElementRegistry.addLast(ModifiedPvP.id("parry_impact"), ParryImpact::render);
 		ClientTickEvents.END_CLIENT_TICK.register(client -> {
 			ParryImpact.tick();
 			SpearClient.tick();
+			AdaptiveClient.tick();
 			CombatClient.tick(client);
 		});
 		ClientPlayConnectionEvents.DISCONNECT.register((handler, client) -> {
 			SpearClient.clear();
+			AdaptiveClient.clear();
 			ParryImpact.clear();
 		});
 		ClientPlayNetworking.registerGlobalReceiver(ParryImpactPayload.TYPE, (payload, context) -> ParryImpact.start(payload.ticks()));
@@ -49,6 +53,15 @@ public class ModifiedPvPClient implements ClientModInitializer {
 				payload.pressure(),
 				payload.brokenTicks(),
 				payload.enhanced(),
-				payload.immune()));
+				payload.immune(),
+				payload.style()));
+		ClientPlayNetworking.registerGlobalReceiver(AdaptiveStatePayload.TYPE, (payload, context) -> AdaptiveClient.apply(
+				payload.familyId(),
+				payload.phaseId(),
+				payload.styleId(),
+				payload.progress(),
+				payload.readyTicks(),
+				payload.cooldownTicks(),
+				payload.cooldownMax()));
 	}
 }

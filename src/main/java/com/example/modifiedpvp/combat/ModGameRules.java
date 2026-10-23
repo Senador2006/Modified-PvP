@@ -6,6 +6,8 @@ import java.nio.file.Path;
 import java.util.Properties;
 
 import com.example.modifiedpvp.ModifiedPvP;
+import com.example.modifiedpvp.combat.adaptive.AdaptiveBalanceConfig;
+import com.example.modifiedpvp.combat.adaptive.AdaptiveCombatManager;
 
 import net.fabricmc.loader.api.FabricLoader;
 import net.minecraft.server.level.ServerPlayer;
@@ -30,6 +32,7 @@ public final class ModGameRules {
 		} else {
 			properties.setProperty("unlockSpecials", "false");
 			properties.setProperty("drainWater", "true");
+			properties.setProperty("adaptiveDebug", "false");
 			try (var out = Files.newOutputStream(path)) {
 				properties.store(out, "Modified PvP server settings");
 			} catch (IOException exception) {
@@ -38,6 +41,7 @@ public final class ModGameRules {
 		}
 		unlockSpecials = Boolean.parseBoolean(properties.getProperty("unlockSpecials", "false"));
 		drainWater = Boolean.parseBoolean(properties.getProperty("drainWater", "true"));
+		AdaptiveCombatManager.configure(AdaptiveBalanceConfig.from(properties));
 	}
 
 	public static boolean unlockSpecials(ServerPlayer player) {

@@ -132,12 +132,12 @@ public abstract class PlayerCombatMixin implements CombatantAccess {
 		if (fullyBlocked || !callback.getReturnValueZ() || amount <= 0.0F) {
 			return;
 		}
-		ComboSpecials.onDamaged(player);
+		ComboSpecials.onDamaged(player, source);
 	}
 
 	@Inject(method = "canCriticalAttack", at = @At("HEAD"), cancellable = true)
 	private void modifiedpvp$autoCrit(Entity target, CallbackInfoReturnable<Boolean> callback) {
-		if (target instanceof LivingEntity && ComboSpecials.autoCrit((Player) (Object) this)) {
+		if (target instanceof LivingEntity living && ComboSpecials.autoCrit((Player) (Object) this, living)) {
 			callback.setReturnValue(true);
 		}
 	}
@@ -178,8 +178,7 @@ public abstract class PlayerCombatMixin implements CombatantAccess {
 		if (this.modifiedpvp$attackScale >= CombatRules.COMBO_MIN_STRENGTH && player instanceof ServerPlayer server && target instanceof LivingEntity living
 				&& (living.getLastHurtByMob() == player && living.getLastHurtByMobTimestamp() == living.tickCount)
 				&& (living instanceof Mob || living instanceof Player)) {
-			ComboSpecials.onMeleeHit(server);
+			ComboSpecials.onMeleeHit(server, living, living.isBlocking());
 		}
-		CombatActions.strikeOffhand(player, target, this.modifiedpvp$attackScale);
 	}
 }

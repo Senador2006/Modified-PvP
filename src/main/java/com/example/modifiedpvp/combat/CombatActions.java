@@ -4,6 +4,9 @@ import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.List;
 
+import com.example.modifiedpvp.combat.adaptive.AdaptiveCombatManager;
+import com.example.modifiedpvp.combat.adaptive.AdaptiveStyle;
+import com.example.modifiedpvp.combat.adaptive.WeaponFamily;
 import com.example.modifiedpvp.mixin.DamageAbsorbInvoker;
 import com.example.modifiedpvp.network.ModNetworking;
 
@@ -187,15 +190,21 @@ public final class CombatActions {
 			double range = CombatRules.THRUST_BASE_RANGE + rangeLevel * CombatRules.THRUST_RANGE_PER_LEVEL;
 			LivingEntity target = thrustTarget(serverPlayer, range);
 			if (target != null) {
-				float damage = weaponDamage(serverPlayer, sword, target, strength, 1.2F);
+				float pierce = 1.2F;
+				if (AdaptiveCombatManager.isReady(serverPlayer, WeaponFamily.SWORD, AdaptiveStyle.PONTA_PRECISAO)
+						&& target.getUUID().equals(AdaptiveCombatManager.readyTarget(serverPlayer, WeaponFamily.SWORD))) {
+					pierce *= AdaptiveCombatManager.config().swordPierceRatio();
+				}
+				float damage = weaponDamage(serverPlayer, sword, target, strength, pierce);
 				if (hurtWithWeapon(serverPlayer, target, sword, damage, EquipmentSlot.MAINHAND, 0.35)) {
 					if (target instanceof Mob || target instanceof Player) {
-						ComboSpecials.onThrustHit(serverPlayer);
+						ComboSpecials.onThrustHit(serverPlayer, target, true);
 					}
 					play(serverPlayer, SoundEvents.PLAYER_ATTACK_KNOCKBACK, 1.0F, 0.9F);
 					serverPlayer.level().sendParticles(ParticleTypes.CRIT, target.getX(), target.getY(0.6), target.getZ(), 8, 0.2, 0.2, 0.2, 0.05);
 				}
 			} else {
+				ComboSpecials.onThrustHit(serverPlayer, null, false);
 				play(serverPlayer, SoundEvents.PLAYER_ATTACK_SWEEP, 0.8F, 1.1F);
 			}
 			serverPlayer.swing(InteractionHand.MAIN_HAND);
@@ -233,11 +242,14 @@ public final class CombatActions {
 
 		float ratio = Math.min(1.0F, (chargedTicks - CombatRules.HEAVY_MIN_TICKS) / (float) (CombatRules.HEAVY_FULL_TICKS - CombatRules.HEAVY_MIN_TICKS));
 		int slice = ModEnchantments.level(serverPlayer.level(), ModEnchantments.SLICE, axe);
-		boolean empowered = ComboSpecials.hasAxeEmpower(serverPlayer);
+		AdaptiveStyle axeStyle = AdaptiveCombatManager.readyStyle(serverPlayer, WeaponFamily.AXE);
+		boolean empowered = axeStyle != null;
 		List<LivingEntity> targets = new ArrayList<>(targetsInLook(serverPlayer, CombatRules.HEAVY_RANGE, 0.2));
 		targets.sort(Comparator.comparingDouble(serverPlayer::distanceToSqr));
 		int hits = 0;
 		boolean comboHit = false;
+		boolean anyBlocked = false;
+		LivingEntity first = null;
 		for (LivingEntity target : targets) {
 			if (hits >= 3) {
 				break;
@@ -245,8 +257,16 @@ public final class CombatActions {
 			float falloff = hits == 0 ? 1.0F : hits == 1 ? 0.55F : 0.35F;
 			boolean blocking = target.isBlocking();
 			boolean pvp = target instanceof Player;
+			anyBlocked |= blocking;
+			if (first == null) {
+				first = target;
+			}
 			float multiplier = (0.75F + ratio * 0.85F) * (1.0F + 0.22F * slice) * falloff;
-			if (empowered && (!pvp || !blocking)) {
+			if (axeStyle == AdaptiveStyle.FORCA_DOMINANTE && !blocking) {
+				multiplier *= AdaptiveCombatManager.config().axeSovereignDamage();
+			} else if (axeStyle == AdaptiveStyle.RUPTURA_DEFENSIVA && blocking) {
+				multiplier *= AdaptiveCombatManager.config().axeRuinDamage();
+			} else if (empowered && axeStyle == null && (!pvp || !blocking)) {
 				multiplier *= CombatRules.AXE_EMPOWER_DAMAGE;
 			}
 			float damage = weaponDamage(serverPlayer, axe, target, 1.0F, multiplier);
@@ -254,8 +274,12 @@ public final class CombatActions {
 			if (empowered && pvp && blocking) {
 				ControlGuard.exposeGuard(target, serverPlayer, CombatRules.AXE_EXPOSE_TICKS);
 			}
-			if (hurtWithWeapon(serverPlayer, target, axe, damage, EquipmentSlot.MAINHAND, 0.45 + ratio * 0.55)) {
-				if (empowered && !pvp) {
+			double knock = 0.45 + ratio * 0.55;
+			if (axeStyle == AdaptiveStyle.FORCA_DOMINANTE) {
+				knock += AdaptiveCombatManager.config().axeSovereignKnockback();
+			}
+			if (hurtWithWeapon(serverPlayer, target, axe, damage, EquipmentSlot.MAINHAND, knock)) {
+				if (empowered && !pvp && axeStyle != AdaptiveStyle.RUPTURA_DEFENSIVA) {
 					ControlGuard.stun(target, serverPlayer, CombatRules.AXE_STUN_TICKS);
 				} else if (empowered && pvp) {
 					ControlGuard.offBalance(target, serverPlayer, CombatRules.AXE_EXPOSE_TICKS);
@@ -274,11 +298,11 @@ public final class CombatActions {
 		play(serverPlayer, SoundEvents.PLAYER_ATTACK_STRONG, 1.0F, 0.75F + ratio * 0.2F);
 		serverPlayer.level().sendParticles(ParticleTypes.SWEEP_ATTACK, serverPlayer.getX(), serverPlayer.getY(0.6), serverPlayer.getZ(), 1, 0.0, 0.0, 0.0, 0.0);
 		if (hits > 0) {
-			if (empowered) {
-				ComboSpecials.consumeAxeEmpower(serverPlayer);
-			}
+			ComboSpecials.onHeavyResolved(serverPlayer, first, anyBlocked, true);
 			ComboSpecials.onHeavySuccess(serverPlayer, comboHit);
 			serverPlayer.level().sendParticles(ParticleTypes.CRIT, serverPlayer.getX(), serverPlayer.getY(0.7), serverPlayer.getZ(), 12, 0.6, 0.3, 0.6, 0.08);
+		} else if (empowered) {
+			ComboSpecials.onHeavyResolved(serverPlayer, first, anyBlocked, false);
 		}
 	}
 
@@ -352,6 +376,7 @@ public final class CombatActions {
 		float reflected = attacker instanceof Player ? 0.0F : taken * CombatRules.PARRY_REFLECT_MULTIPLIER;
 		ParryHitstop.armReflect(player, attacker, reflected);
 		feedback(player, "combat.modifiedpvp.parry.melee");
+		ComboSpecials.onPerfectParry(player, attacker);
 		return -1.0F;
 	}
 
@@ -380,6 +405,60 @@ public final class CombatActions {
 		level.playSound(null, attacker.getX(), attacker.getY(), attacker.getZ(), SoundEvents.PLAYER_ATTACK_CRIT, SoundSource.PLAYERS, 1.0F, 1.0F);
 		level.sendParticles(ParticleTypes.CRIT, attacker.getX(), attacker.getY(0.6), attacker.getZ(), 12, 0.2, 0.3, 0.2, 0.15);
 		level.sendParticles(ParticleTypes.ENCHANTED_HIT, attacker.getX(), attacker.getY(0.6), attacker.getZ(), 8, 0.2, 0.25, 0.2, 0.05);
+	}
+
+	public static boolean tryCombinedStrike(Player player) {
+		if (!WeaponStats.isDualWielding(player) || !player.isAlive() || player.isSpectator() || ModEffects.blocksAbilities(player)) {
+			return false;
+		}
+		float strength = player.getAttackStrengthScale(0.5F);
+		if (strength < CombatRules.DUAL_WIELD_MIN_STRENGTH) {
+			return false;
+		}
+		if (player.level().isClientSide()) {
+			player.resetAttackStrengthTicker();
+			return true;
+		}
+		if (!(player instanceof ServerPlayer serverPlayer)) {
+			return false;
+		}
+		LivingEntity target = thrustTarget(serverPlayer, serverPlayer.entityInteractionRange() + 0.5);
+		AdaptiveStyle style = AdaptiveCombatManager.readyStyle(serverPlayer, WeaponFamily.DUAL_SWORD);
+		float mainMul = 1.0F;
+		float offMul = CombatRules.DUAL_WIELD_OFFHAND_RATIO;
+		if (style == AdaptiveStyle.ALTERNANCIA_PERFEITA) {
+			mainMul = AdaptiveCombatManager.config().dualCrossDamage();
+		} else if (style == AdaptiveStyle.PRESSAO_ALTERNADA) {
+			offMul *= AdaptiveCombatManager.config().dualFlurrySecond();
+		} else if (style == AdaptiveStyle.ABERTURA_CRUZADA) {
+			mainMul = AdaptiveCombatManager.config().dualOpeningDamage();
+		}
+		boolean hit = false;
+		boolean blocked = target != null && target.isBlocking();
+		if (target != null) {
+			float main = weaponDamage(serverPlayer, serverPlayer.getMainHandItem(), target, strength, mainMul);
+			hit = hurtWithWeapon(serverPlayer, target, serverPlayer.getMainHandItem(), main, EquipmentSlot.MAINHAND, 0.28);
+			if (style != AdaptiveStyle.ALTERNANCIA_PERFEITA || !hit) {
+				ItemStack offhand = serverPlayer.getOffhandItem();
+				int doubleHit = ModEnchantments.highest(serverPlayer.level(), ModEnchantments.DOUBLE_HIT, serverPlayer.getMainHandItem(), offhand);
+				float off = weaponDamage(serverPlayer, offhand, target, strength, offMul * (1.0F + 0.08F * doubleHit));
+				boolean second = hurtWithWeapon(serverPlayer, target, offhand, off, EquipmentSlot.OFFHAND, 0.18);
+				hit |= second;
+				if (second) {
+					serverPlayer.swing(InteractionHand.OFF_HAND);
+				}
+			} else {
+				serverPlayer.swing(InteractionHand.OFF_HAND);
+				serverPlayer.level().sendParticles(ParticleTypes.ENCHANTED_HIT, target.getX(), target.getY(0.6), target.getZ(), 6, 0.15, 0.15, 0.15, 0.03);
+			}
+		}
+		serverPlayer.swing(InteractionHand.MAIN_HAND);
+		serverPlayer.resetAttackStrengthTicker();
+		exhaust(serverPlayer, 0.22F);
+		if (target instanceof Mob || target instanceof Player || target == null) {
+			ComboSpecials.onCombinedHit(serverPlayer, target, hit, blocked);
+		}
+		return true;
 	}
 
 	public static void strikeOffhand(Player player, Entity target, float attackScale) {

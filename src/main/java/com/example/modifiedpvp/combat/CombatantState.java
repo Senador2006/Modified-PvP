@@ -28,6 +28,8 @@ public final class CombatantState {
 	private int parryCooldownMax = CombatRules.PARRY_MISS_COOLDOWN;
 	private boolean parrySucceeded;
 	private boolean parryResolved;
+	private long shieldRaisedAt = Long.MIN_VALUE;
+	private boolean shieldRaised;
 
 	public void tick(Player player) {
 		if (this.parryCooldown > 0) {
@@ -60,6 +62,15 @@ public final class CombatantState {
 			}
 		} else {
 			this.groundTicks = 0;
+		}
+
+		boolean blocking = player.isUsingItem() && WeaponStats.isShield(player.getUseItem());
+		if (blocking && !this.shieldRaised) {
+			this.shieldRaised = true;
+			this.shieldRaisedAt = player.level().getGameTime();
+		} else if (!blocking) {
+			this.shieldRaised = false;
+			this.shieldRaisedAt = Long.MIN_VALUE;
 		}
 
 		if (!this.sliding) {
@@ -229,6 +240,14 @@ public final class CombatantState {
 		boolean resolved = this.parryResolved;
 		this.parryResolved = false;
 		return resolved;
+	}
+
+	public long shieldRaisedAt() {
+		return this.shieldRaisedAt;
+	}
+
+	public boolean shieldRaised() {
+		return this.shieldRaised;
 	}
 
 	public void setParryCooldown(int ticks) {

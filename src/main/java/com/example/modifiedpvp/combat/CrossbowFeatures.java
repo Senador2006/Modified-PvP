@@ -18,6 +18,7 @@ import net.minecraft.world.entity.projectile.Projectile;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.component.ChargedProjectiles;
 import net.minecraft.world.level.ClipContext;
+import net.minecraft.world.phys.AABB;
 import net.minecraft.world.phys.BlockHitResult;
 import net.minecraft.world.phys.HitResult;
 import net.minecraft.world.phys.Vec3;
@@ -86,6 +87,37 @@ public final class CrossbowFeatures {
 		}
 		weapon.set(DataComponents.CHARGED_PROJECTILES, ChargedProjectiles.of(loaded));
 		return true;
+	}
+
+	public static void onFireworkBurst(Projectile projectile) {
+		if (!(projectile.getOwner() instanceof net.minecraft.server.level.ServerPlayer player)) {
+			return;
+		}
+		if (projectile instanceof GrappleAccess access && access.modifiedpvp$isGrapple()) {
+			return;
+		}
+		if (!(projectile.level() instanceof ServerLevel level)) {
+			return;
+		}
+		AABB area = projectile.getBoundingBox().inflate(5.0);
+		LivingEntity focus = null;
+		int affected = 0;
+		double best = Double.MAX_VALUE;
+		for (var entity : level.getEntities(projectile, area, candidate -> candidate instanceof LivingEntity living && living.isAlive() && living != player)) {
+			LivingEntity living = (LivingEntity) entity;
+			if (living instanceof net.minecraft.world.entity.player.Player other && !player.canHarmPlayer(other)) {
+				continue;
+			}
+			affected++;
+			double distance = living.distanceToSqr(projectile);
+			if (distance < best) {
+				best = distance;
+				focus = living;
+			}
+		}
+		if (affected > 0) {
+			ComboSpecials.onFireworkSplash(player, focus, affected, false);
+		}
 	}
 
 	public static void onGrappleHit(Projectile projectile, HitResult hit) {

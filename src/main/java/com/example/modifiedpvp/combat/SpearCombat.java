@@ -54,6 +54,7 @@ public final class SpearCombat {
 	private static final Map<UUID, Integer> CIRCULAR_SPINS = new HashMap<>();
 	private static JabContext jab;
 	private static ServerPlayer charging;
+	private static double chargeSpeed;
 	private static StabFrame frame;
 	private static boolean reapplyingGuard;
 	private static boolean autoRiposting;
@@ -280,6 +281,8 @@ public final class SpearCombat {
 			return;
 		}
 		charging = player;
+		Vec3 motion = player.getDeltaMovement();
+		chargeSpeed = Math.sqrt(motion.x * motion.x + motion.z * motion.z);
 		GuardState state = STATES.get(player.getUUID());
 		if (state != null && player.level().getGameTime() < state.guardUntil) {
 			state.guardUntil = player.level().getGameTime();
@@ -290,6 +293,7 @@ public final class SpearCombat {
 	public static void endCharge(LivingEntity attacker) {
 		if (charging == attacker) {
 			charging = null;
+			chargeSpeed = 0.0;
 		}
 	}
 
@@ -354,6 +358,9 @@ public final class SpearCombat {
 		if (current.kind == Kind.CHARGE) {
 			SpearPressure.add(player, target, current.blocked ? SpearRules.PRESSURE_SHIELD : SpearRules.PRESSURE_CHARGE,
 					current.blocked ? SpearPressure.Cause.SHIELD : SpearPressure.Cause.CHARGE, romper);
+			if (!current.blocked) {
+				tryKinetic(player, target);
+			}
 			return;
 		}
 
@@ -409,6 +416,28 @@ public final class SpearCombat {
 				remaining(state.followUpUntil, now),
 				remaining(state.finisherCooldownUntil, now),
 				selfBroken);
+	}
+
+	private static void tryKinetic(ServerPlayer player, LivingEntity target) {
+		long now = player.level().getGameTime();
+		SpearPressure.Opening opening = SpearPressure.openingOn(player, target, now);
+		if (opening == null || chargeSpeed < SpearRules.KINETIC_MIN_SPEED || !unlocked(player)) {
+			return;
+		}
+		GuardState state = STATES.computeIfAbsent(player.getUUID(), ignored -> new GuardState());
+		if (now < state.finisherCooldownUntil) {
+			return;
+		}
+		Vec3 direction = WeaponStats.horizontalLook(player);
+		target.knockback(SpearRules.KINETIC_KNOCKBACK, -direction.x, -direction.z);
+		target.hurtMarked = true;
+		SpearPressure.consume(player, opening, now);
+		state.finisherCooldownUntil = now + SpearRules.FINISHER_COOLDOWN_TICKS;
+		ServerLevel level = player.level();
+		level.playSound(null, target.getX(), target.getY(), target.getZ(), SoundEvents.PLAYER_ATTACK_KNOCKBACK, SoundSource.PLAYERS, 0.9F, 0.7F);
+		level.sendParticles(ParticleTypes.CLOUD, target.getX(), target.getY(0.2), target.getZ(), 8, 0.2, 0.05, 0.2, 0.02);
+		player.displayClientMessage(Component.translatable("combat.modifiedpvp.spear.kinetic"), true);
+		syncState(player);
 	}
 
 	private static boolean tryFinisher(ServerPlayer player, GuardState state, long now) {

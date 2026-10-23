@@ -15,6 +15,8 @@ import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 public class FireworkRocketMixin {
 	@Inject(method = "explode", at = @At("HEAD"))
 	private void modifiedpvp$grappleBurst(ServerLevel level, CallbackInfo callback) {
-		CrossbowFeatures.onGrappleHit((Projectile) (Object) this, null);
+		Projectile projectile = (Projectile) (Object) this;
+		CrossbowFeatures.onGrappleHit(projectile, null);
+		CrossbowFeatures.onFireworkBurst(projectile);
 	}
 }

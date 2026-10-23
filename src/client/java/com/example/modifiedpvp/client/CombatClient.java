@@ -116,6 +116,10 @@ public final class CombatClient {
 		if (!heavyOverShield && (player.isUsingItem() || WeaponStats.offhandConsumesUse(player))) {
 			return;
 		}
+		if (WeaponStats.isDualWielding(player) && CombatActions.tryCombinedStrike(player)) {
+			send(CombatAction.COMBINED_STRIKE);
+			return;
+		}
 		if (WeaponStats.isSword(player.getMainHandItem()) && CombatActions.tryThrust(player)) {
 			send(CombatAction.THRUST);
 			return;

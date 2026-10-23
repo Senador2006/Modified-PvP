@@ -2,6 +2,7 @@ package com.example.modifiedpvp;
 
 import com.example.modifiedpvp.combat.CombatActions;
 import com.example.modifiedpvp.combat.ComboSpecials;
+import com.example.modifiedpvp.combat.adaptive.AdaptiveCombatManager;
 import com.example.modifiedpvp.combat.ControlGuard;
 import com.example.modifiedpvp.combat.CrossbowFeatures;
 import com.example.modifiedpvp.combat.MaceChain;
@@ -41,6 +42,7 @@ public class ModifiedPvP implements ModInitializer {
 				ComboSpecials.tickPlayer(player);
 			}
 			ComboSpecials.tick();
+			AdaptiveCombatManager.tick(server);
 			ControlGuard.tick(server);
 			TridentEffects.tick();
 			CrossbowFeatures.tickGrapples();
