@@ -4,7 +4,7 @@ Movimentação e armas extras para PvP no Minecraft **1.21.11**, feito para Fabr
 
 O cliente prevê o movimento. O dano, o empurrão, os projéteis e os especiais de combo só valem no servidor.
 
-[![Versão](https://img.shields.io/badge/vers%C3%A3o-1.3.0-4c8bf5?style=flat-square)](releases/modifiedpvp-1.3.0.jar)
+[![Versão](https://img.shields.io/badge/vers%C3%A3o-1.3.1-4c8bf5?style=flat-square)](releases/modifiedpvp-1.3.1.jar)
 [![Minecraft](https://img.shields.io/badge/Minecraft-1.21.11-62b47a?style=flat-square)](https://fabricmc.net/develop/)
 [![Fabric Loader](https://img.shields.io/badge/Fabric_Loader-0.19.5+-dbd0b4?style=flat-square)](https://fabricmc.net/)
 [![Fabric API](https://img.shields.io/badge/Fabric_API-0.141.6-c8a2c8?style=flat-square)](https://modrinth.com/mod/fabric-api)
@@ -13,13 +13,13 @@ O cliente prevê o movimento. O dano, o empurrão, os projéteis e os especiais 
 
 ## Download
 
-**[modifiedpvp-1.3.0.jar](releases/modifiedpvp-1.3.0.jar)**
+**[modifiedpvp-1.3.1.jar](releases/modifiedpvp-1.3.1.jar)**
 
 ## Instalação
 
 1. Instale o [Fabric Loader](https://fabricmc.net/use/installer/) para o Minecraft 1.21.11.
 2. Baixe a [Fabric API](https://modrinth.com/mod/fabric-api) para a 1.21.11.
-3. Coloque a Fabric API e o `modifiedpvp-1.3.0.jar` na pasta `mods` do Minecraft.
+3. Coloque a Fabric API e o `modifiedpvp-1.3.1.jar` na pasta `mods` do Minecraft.
 4. Em servidor, o mod precisa estar no servidor **e** em todos os clientes.
 
 ## Requisitos
@@ -46,10 +46,11 @@ As teclas ficam na categoria **Modified PvP** e podem ser trocadas em Controles.
 | Maça acorrentada | Clique direito com a maça | Lança a maça presa a uma corrente. Ela volta sozinha para a mão. |
 | Trocar flecha | `G` com o arco na mão | Passa para a próxima flecha do bundle. |
 | Contra Golpe | `Z` com a lança na mão principal | Postura frontal curta. Na janela perfeita anula o melee e solta na hora duas estocadas no atacante. A mesma tecla dispara Reação Total se o alvo estiver com Defesa Rompida. A charge natural na mesma abertura dispara Investida Implacável. |
+| Guarda do machado | `Alt esquerdo` com machado e escudo | Levanta o escudo da mão secundária. Se Fortaleza Avançada estiver pronta, o mesmo aperto faz o avanço curto. O clique direito continua carregando o ataque pesado. |
 
-Comida ou lança na mão secundária continuam usando o clique direito. O escudo também, menos quando o machado está na mão principal: aí o clique carrega o ataque pesado. A estocada ainda sai na tecla `V`.
+Comida ou lança na mão secundária continuam usando o clique direito. Com espada na principal, tridente ou besta na secundária também usam o direito; a estocada fica na tecla `V`. O escudo com espada usa o direito e a estocada fica no `V`. Com machado e escudo, o direito carrega o ataque pesado e a guarda nova fica no `Alt esquerdo`.
 
-À esquerda da hotbar, os quatro ícones de parry, dash, deslize e pulo duplo continuam no mesmo lugar. O Contra Golpe aparece ao lado esquerdo do parry, sem deslocá-los.
+À esquerda da hotbar, os quatro ícones de parry, dash, deslize e pulo duplo continuam no mesmo lugar. O Contra Golpe aparece ao lado esquerdo do parry, sem deslocá-los. A barra híbrida fica acima da barra adaptativa.
 
 ## Combate
 
@@ -114,7 +115,9 @@ Flechas diferentes (normal, espectral, com efeito) podem ficar no mesmo bundle. 
 
 ### Tridente
 
-**Lealdade** puxa o alvo até você se houver linha de visão. Em PvP o alvo fica **Desequilibrado**, sem trava total de pulo e movimento. Contra mobs, o stun antigo continua. Nível mais alto puxa mais rápido.
+**Lealdade** só faz o tridente voltar, como no vanilla. O puxão e o atordoamento antigos saíram dela.
+
+**Pull** I–III puxa o alvo por poucos ticks, com força limitada e sem stun. Exige Lealdade no mesmo tridente. Sem linha de visão, o puxão não começa e para no meio. O mesmo alvo não pode ser puxado de novo na hora. Não combina na prática com Impulso, porque Lealdade e Impulso continuam exclusivos no vanilla. Não adiciona raio.
 
 ### Escudo
 
@@ -141,10 +144,28 @@ Oportunidades e buffs temporários zeram na morte, no logout e ao trocar de mund
 | Machado | Acerte 20 ataques pesados | Pesado direto ou bloqueado | Golpe Soberano, Ruína da Guarda | 50 s | Não |
 | Arco | Acerte 10 mobs diferentes | Acerto carregado ou ignição de carrinho | Disparo Certeiro, Ignição Perfeita | 30 s | Sim |
 | Besta | Mesmo advancement do arco | Foguete em grupo ou no mesmo alvo | Barragem Explosiva, Descarga Concentrada | 40 s | Sim |
-| Tridente | Puxe um afogado com Lealdade | Retorno, maré, tempestade | Arremesso Soberano, Investida das Marés, Julgamento do Trovão | 60 s | Não |
+| Tridente | Acerte um afogado com um tridente lançado | Retorno, maré, tempestade | Arremesso Soberano, Investida das Marés, Julgamento do Trovão | 60 s | Não |
 | Escudo | Bloqueie 30 golpes | Guarda, timing, aliado | Repulsão, Choque de Escudo, Intervenção | 45 s | Sim |
 | Maça | Acerte 10 arremessos da corrente | Entidade ou bloco | Impacto de Retorno, Repulsão | 70 s | Não |
 | Lança | Acerte 10 Contra Golpes perfeitos em mobs hostis | Perfil da Pressão | Reação Total (`Z`), Investida Implacável (charge) ou Colapso Circular (estocada) | 5 s | Não |
+
+## Combos híbridos
+
+Com as duas famílias desbloqueadas e as duas armas disponíveis, o servidor observa uma sequência e abre **uma** oportunidade híbrida. O evento que completa a preparação não entrega o bônus. O próximo comando manual correspondente executa. Se a híbrida estiver pronta, ela tem prioridade sobre o finalizador individual da mesma ação. As duas não se somam.
+
+| Par | Técnicas ativas |
+| --- | --- |
+| Lança + maça | Impacto de Investida, Reação Aérea. Golpe Estendido só reconhece a troca; o alcance não muda. |
+| Espada + tridente | Caçada Implacável (exige Pull) e Retorno Ofensivo. Duelo Coordenado fica desligado. |
+| Maça + tridente | Âncora das Marés (exige Pull) e Queda Guiada. Eco do Trovão fica desligado. |
+| Machado + escudo | Retaliação Soberana, Fortaleza Avançada (`Alt esquerdo`) e Ruptura Defensiva. |
+| Espada + escudo | Contracorte, Ponta Protegida e Desvio de Guarda. O bloqueio cronometrado é o do escudo, não o parry universal. |
+| Espada + besta | Finta Armada e Tiro Repentino. Último Recurso fica desligado. |
+| Machado + besta | Abertura da Coroa, Pressão do Rei e Última Palavra. |
+
+**Technoblade Never Dies** (aba Especiais, moldura desafio) abre ao completar as três técnicas da Coroa Carmesim contra alvos hostis válidos. O título fica em inglês em todos os idiomas. As técnicas funcionam antes do advancement.
+
+Tridente + escudo, arco + espada, maça + escudo e lança + besta não foram implementados.
 
 ## Encantamentos
 
@@ -162,11 +183,12 @@ Oportunidades e buffs temporários zeram na morte, no logout e ao trocar de mund
 | Grappling Hook | Besta | I | Puxa você até o impacto do tiro. |
 | Escopeta | Besta | III | Nível I, II e III carregam 2, 3 e 4 munições. |
 | Drenar | Tridente | I | O tridente lançado apaga a água e as colunas de bolhas que atravessa. Não combina com Impulso. |
+| Pull | Tridente | III | Puxão curto e limitado. Exige Lealdade. Não atordoa e não combina com Impulso. |
 | Romper | Lança | III | I Fissura: a primeira estocada do Contra Golpe perfeito +15 de pressão. II Fratura: a segunda estocada automática +15 de pressão. III Colapso: se essa riposta causar Defesa Rompida, a Reação Total sai aprimorada, com empurrão leve em mobs próximos. Não é o encantamento Ruptura da maça. |
 
 Escopeta e Grappling Hook não combinam entre si, nem com Tiro Múltiplo ou Perfuração.
 
-Lealdade continua sendo o encantamento vanilla. O mod só muda o que acontece no acerto.
+Lealdade volta a ser só o retorno vanilla. O puxão ficou no Pull.
 
 ### Onde conseguir
 
@@ -177,11 +199,14 @@ Lealdade continua sendo o encantamento vanilla. O mod só muda o que acontece no
 | Flecha Dupla | Baús da biblioteca das Strongholds. Todo baú tem um livro garantido. |
 | Grappling Hook, Escopeta | Baú dos Postos Avançados de Saqueadores, 50% de chance de um livro. |
 | Drenar | Baús das Ruínas Oceânicas: 35% nas grandes, 15% nas pequenas. |
+| Pull | Livro nas Ruínas Oceânicas (10% nas pequenas, 20% nas grandes) e no tesouro de naufrágio (12%). Não entra sozinho em tridentes que já tinham Lealdade. |
 | Romper | Livro nível I nos baús raros das Trial Chambers (`chests/trial_chambers/reward_rare`), 15% de chance por baú. II e III saem na bigorna. Não sai na mesa nem com aldeão. |
 
 Os encantamentos de maça, arco, besta, tridente e Romper da lança não saem na mesa nem com aldeões.
 
 Em servidor, o arquivo `config/modifiedpvp.properties` aceita `unlockSpecials=true` para liberar todos os especiais sem advancements (arenas), `drainWater=false` para impedir o Drenar de apagar água e `adaptiveDebug=true` para logar estilo/finalizador. Os pesos e recargas adaptativos também podem ser calibrados nesse arquivo (`adaptive.window.sword`, `adaptive.evidence.axe`, etc.).
+
+Chaves novas da 1.3.1, com valores provisórios: `hybridCombosEnabled=true`, `hybridRequireAdvancements=true`, `hybridOptionalStyles=false`, `hybridAllowFinisherOnMiss=false`, `hybridEvidenceWindowTicks=80`, `hybridOpportunityWindowTicks=50`, `hybridPrimeWindowTicks=30`, `hybridSharedCooldownTicks=200`, `hybridSwapWindowTicks=5`, `hybridRecoveryTicks=4`, `hybridRecoverySpeed=0.20`, `hybridRecoveryCap=0.40`, `hybridMaxKnockbackBonus=0.30`, `hybridChargeFavorTicks=4`, `hybridGuardTicks=8`, `hybridAdvanceSpeed=0.40`, `spearMaceExtendedReachEnabled=false`, `pullEnabled=true`, `pullTargetResistanceTicks=40`, `pullStrengthLevel1=0.16`, `pullStrengthLevel2=0.22`, `pullStrengthLevel3=0.28`, `pullTicksLevel1=5`, `pullTicksLevel2=7`, `pullTicksLevel3=9`. `pullRequireLoyalty=false` é ignorado: Pull sem Lealdade não ativa. O histórico do motor guarda no máximo 16 fatos. Um servidor que já tem o arquivo mantém as chaves antigas; as novas usam esses padrões até serem escritas.
 
 ### Afogados
 
@@ -196,6 +221,16 @@ Afogados que nascem com tridente deixam cair o tridente em 70% das mortes (no va
 O jar sai em `build/libs/modifiedpvp-<versão>.jar`.
 
 ## Novidades
+
+### 1.3.1
+
+- Combos híbridos entre lança e maça, espada e tridente, maça e tridente, machado e escudo, espada e escudo, espada e besta, machado e besta. Uma ação executa um finalizador: híbrido pronto primeiro, senão o individual.
+- Encantamento Pull I–III. Lealdade volta a só retornar o tridente. Tridentes antigos com Lealdade não ganham Pull.
+- O desbloqueio do tridente passa a ser acertar um afogado com o tridente lançado.
+- Guarda do machado no `Alt esquerdo`. A barra híbrida fica acima da barra adaptativa; os ícones de movimento não mudam de lugar.
+- Advancement **Technoblade Never Dies** ao completar Abertura da Coroa, Pressão do Rei e Última Palavra contra alvos hostis.
+- Duelo Coordenado, Eco do Trovão, Último Recurso e os pares adiados ficam de fora. O alcance do Golpe Estendido não muda.
+- Checklist: [docs/Modified_PvP_1.3.1_Testes.md](docs/Modified_PvP_1.3.1_Testes.md).
 
 ### 1.3.0
 

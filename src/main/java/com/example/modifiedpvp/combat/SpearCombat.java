@@ -6,6 +6,7 @@ import java.util.Map;
 import java.util.UUID;
 
 import com.example.modifiedpvp.ModifiedPvP;
+import com.example.modifiedpvp.combat.hybrid.HybridCombatManager;
 import com.example.modifiedpvp.network.ModNetworking;
 import com.mojang.serialization.Codec;
 
@@ -246,6 +247,9 @@ public final class SpearCombat {
 			}
 		}
 		jab = new JabContext(player, player.getAttackStrengthScale(0.5F), role, roleTarget, romperLevel(player), guardCut);
+		if (ModEnchantments.level(player.level(), HybridCombatManager.LUNGE, player.getMainHandItem()) > 0) {
+			HybridCombatManager.onSpearLunge(player);
+		}
 	}
 
 	public static void endJab(LivingEntity attacker) {
@@ -361,6 +365,9 @@ public final class SpearCombat {
 			if (!current.blocked) {
 				tryKinetic(player, target);
 			}
+			if (current.damaged) {
+				HybridCombatManager.onSpearHit(player, target, true);
+			}
 			return;
 		}
 
@@ -382,6 +389,9 @@ public final class SpearCombat {
 		} else if (context != null && context.strength >= SpearRules.JAB_MIN_STRENGTH) {
 			float points = effectiveRange(player, target) ? SpearRules.PRESSURE_JAB_EFFECTIVE : SpearRules.PRESSURE_JAB;
 			SpearPressure.add(player, target, points, SpearPressure.Cause.JAB, romper);
+			if (current.damaged && context.role == Role.NONE) {
+				HybridCombatManager.onSpearHit(player, target, true);
+			}
 		}
 	}
 

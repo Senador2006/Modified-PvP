@@ -8,6 +8,7 @@ import com.example.modifiedpvp.combat.ComboSpecials;
 import com.example.modifiedpvp.combat.ModEffects;
 import com.example.modifiedpvp.combat.MultiHit;
 import com.example.modifiedpvp.combat.SpearCombat;
+import com.example.modifiedpvp.combat.hybrid.HybridCombatManager;
 
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
@@ -62,6 +63,7 @@ public abstract class PlayerCombatMixin implements CombatantAccess {
 			this.modifiedpvp$hurtTracked.push(false);
 			return;
 		}
+		amount = HybridCombatManager.mitigate(player, source, amount);
 		if (SpearCombat.reapplyingGuard()) {
 			ComboSpecials.beginHurt(player);
 			this.modifiedpvp$hurtTracked.push(true);

@@ -66,6 +66,19 @@ public class AbstractArrowMixin implements ArrowVolleyAccess {
 		ComboSpecials.onBowCartIgnition(player);
 	}
 
+	@Inject(method = "onHitEntity", at = @At("RETURN"))
+	private void modifiedpvp$crossbowArrow(EntityHitResult hit, CallbackInfo callback) {
+		AbstractArrow arrow = (AbstractArrow) (Object) this;
+		if (arrow instanceof ThrownTrident || arrow.level().isClientSide() || !(arrow.getOwner() instanceof ServerPlayer player)) {
+			return;
+		}
+		ItemStack weapon = arrow.getWeaponItem();
+		if (weapon == null || !(weapon.getItem() instanceof net.minecraft.world.item.CrossbowItem) || !(hit.getEntity() instanceof LivingEntity living) || living == player) {
+			return;
+		}
+		com.example.modifiedpvp.combat.hybrid.HybridCombatManager.onCrossbowArrow(player, living, arrow.getUUID());
+	}
+
 	@Inject(method = "onHitEntity", at = @At("HEAD"))
 	private void modifiedpvp$companionIgnoresInvulnerability(EntityHitResult hit, CallbackInfo callback) {
 		if (!this.modifiedpvp$volleyCompanion) {

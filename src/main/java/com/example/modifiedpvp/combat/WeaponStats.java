@@ -6,8 +6,11 @@ import net.minecraft.world.entity.EquipmentSlotGroup;
 import net.minecraft.world.entity.ai.attributes.AttributeModifier;
 import net.minecraft.world.entity.ai.attributes.Attributes;
 import net.minecraft.world.entity.player.Player;
+import net.minecraft.world.item.CrossbowItem;
 import net.minecraft.world.item.ItemStack;
+import net.minecraft.world.item.Items;
 import net.minecraft.world.item.ShieldItem;
+import net.minecraft.world.item.TridentItem;
 import net.minecraft.world.phys.Vec3;
 
 public final class WeaponStats {
@@ -41,7 +44,11 @@ public final class WeaponStats {
 				|| offhand.has(DataComponents.FOOD)
 				|| offhand.has(DataComponents.PIERCING_WEAPON)
 				|| offhand.has(DataComponents.KINETIC_WEAPON)
-				|| offhand.is(ItemTags.SPEARS));
+				|| offhand.is(ItemTags.SPEARS)
+				|| offhand.getItem() instanceof TridentItem
+				|| offhand.getItem() instanceof CrossbowItem
+				|| offhand.is(Items.TRIDENT)
+				|| offhand.is(Items.CROSSBOW));
 	}
 
 	public static float attackDamage(ItemStack stack) {

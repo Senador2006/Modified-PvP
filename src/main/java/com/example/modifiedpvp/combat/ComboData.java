@@ -63,6 +63,7 @@ final class ComboData {
 
 	long crossbowCooldownUntil;
 	long spearCooldownUntil;
+	int crownMask;
 
 	ComboData copy() {
 		ComboData copy = new ComboData();
@@ -105,6 +106,7 @@ final class ComboData {
 		copy.maceEmpowered = this.maceEmpowered;
 		copy.crossbowCooldownUntil = this.crossbowCooldownUntil;
 		copy.spearCooldownUntil = this.spearCooldownUntil;
+		copy.crownMask = this.crownMask;
 		return copy;
 	}
 
@@ -176,6 +178,7 @@ final class ComboData {
 		data.maceEmpowered = tag.getBooleanOr("mace_empowered", false);
 		data.crossbowCooldownUntil = tag.getLongOr("crossbow_cooldown", 0L);
 		data.spearCooldownUntil = tag.getLongOr("spear_cooldown", 0L);
+		data.crownMask = tag.getIntOr("crown_mask", 0);
 		return data;
 	}
 
@@ -220,6 +223,7 @@ final class ComboData {
 		tag.putBoolean("mace_empowered", data.maceEmpowered);
 		tag.putLong("crossbow_cooldown", data.crossbowCooldownUntil);
 		tag.putLong("spear_cooldown", data.spearCooldownUntil);
+		tag.putInt("crown_mask", data.crownMask);
 		return tag;
 	}
 
@@ -266,6 +270,7 @@ final class ComboData {
 		buf.writeBoolean(data.maceEmpowered);
 		buf.writeLong(data.crossbowCooldownUntil);
 		buf.writeLong(data.spearCooldownUntil);
+		buf.writeVarInt(data.crownMask);
 	}
 
 	private static ComboData decode(RegistryFriendlyByteBuf buf) {
@@ -312,6 +317,7 @@ final class ComboData {
 		data.maceEmpowered = buf.readBoolean();
 		data.crossbowCooldownUntil = buf.readLong();
 		data.spearCooldownUntil = buf.readLong();
+		data.crownMask = buf.readVarInt();
 		return data;
 	}
 }

@@ -8,10 +8,12 @@ import com.example.modifiedpvp.combat.CrossbowFeatures;
 import com.example.modifiedpvp.combat.MaceChain;
 import com.example.modifiedpvp.combat.ModEffects;
 import com.example.modifiedpvp.combat.ModGameRules;
+import com.example.modifiedpvp.combat.ModItems;
 import com.example.modifiedpvp.combat.ModSounds;
 import com.example.modifiedpvp.combat.ParryHitstop;
 import com.example.modifiedpvp.combat.SpearCombat;
 import com.example.modifiedpvp.combat.TridentEffects;
+import com.example.modifiedpvp.combat.hybrid.HybridCombatManager;
 import com.example.modifiedpvp.loot.ModLoot;
 import com.example.modifiedpvp.network.ModNetworking;
 
@@ -30,6 +32,7 @@ public class ModifiedPvP implements ModInitializer {
 	public void onInitialize() {
 		ModSounds.register();
 		ModEffects.register();
+		ModItems.register();
 		ModGameRules.register();
 		ModNetworking.register();
 		MaceChain.register();
@@ -43,6 +46,7 @@ public class ModifiedPvP implements ModInitializer {
 			}
 			ComboSpecials.tick();
 			AdaptiveCombatManager.tick(server);
+			HybridCombatManager.tick(server);
 			ControlGuard.tick(server);
 			TridentEffects.tick();
 			CrossbowFeatures.tickGrapples();

@@ -13,12 +13,14 @@ import net.fabricmc.fabric.api.client.networking.v1.ClientPlayNetworking;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.multiplayer.ClientLevel;
 import net.minecraft.network.chat.Component;
+import net.minecraft.world.InteractionHand;
 import net.minecraft.world.entity.player.Player;
 
 public final class CombatClient {
 	private static boolean wasJumpDown;
 	private static boolean wasUseDown;
 	private static boolean wasSlideDown;
+	private static boolean wasGuardDown;
 	private static int airborneTicks;
 
 	private CombatClient() {
@@ -31,6 +33,8 @@ public final class CombatClient {
 			wasJumpDown = false;
 			wasUseDown = false;
 			wasSlideDown = false;
+			wasGuardDown = false;
+			HybridInput.setGuard(false);
 			airborneTicks = 0;
 			return;
 		}
@@ -47,6 +51,7 @@ public final class CombatClient {
 			wasJumpDown = client.options.keyJump.isDown();
 			wasUseDown = client.options.keyUse.isDown();
 			wasSlideDown = ModKeybinds.SLIDE.isDown();
+			releaseGuard(client, player);
 			return;
 		}
 
@@ -55,6 +60,7 @@ public final class CombatClient {
 			wasJumpDown = client.options.keyJump.isDown();
 			wasUseDown = client.options.keyUse.isDown();
 			wasSlideDown = ModKeybinds.SLIDE.isDown();
+			releaseGuard(client, player);
 			return;
 		}
 
@@ -76,6 +82,17 @@ public final class CombatClient {
 			send(CombatAction.SLIDE_STOP);
 		}
 		wasSlideDown = slideDown;
+
+		boolean guardDown = ModKeybinds.AXE_GUARD.isDown();
+		boolean axeShield = WeaponStats.isAxe(player.getMainHandItem()) && WeaponStats.isShield(player.getOffhandItem());
+		if (guardDown && !wasGuardDown && axeShield && client.gameMode != null) {
+			HybridInput.setGuard(true);
+			client.gameMode.useItem(player, InteractionHand.OFF_HAND);
+			send(CombatAction.AXE_GUARD);
+		} else if (!guardDown && wasGuardDown) {
+			releaseGuard(client, player);
+		}
+		wasGuardDown = guardDown;
 
 		boolean useDown = client.options.keyUse.isDown();
 		CombatantState state = CombatantAccess.of(player);
@@ -126,6 +143,14 @@ public final class CombatClient {
 		}
 		if (WeaponStats.isAxe(player.getMainHandItem()) && CombatActions.tryStartHeavy(player)) {
 			send(CombatAction.HEAVY_START);
+		}
+	}
+
+	private static void releaseGuard(Minecraft client, Player player) {
+		HybridInput.setGuard(false);
+		wasGuardDown = false;
+		if (client.gameMode != null && player.isUsingItem() && WeaponStats.isShield(player.getUseItem())) {
+			client.gameMode.releaseUsingItem(player);
 		}
 	}
 

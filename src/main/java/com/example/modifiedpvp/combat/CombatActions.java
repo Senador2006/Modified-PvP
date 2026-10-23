@@ -7,6 +7,9 @@ import java.util.List;
 import com.example.modifiedpvp.combat.adaptive.AdaptiveCombatManager;
 import com.example.modifiedpvp.combat.adaptive.AdaptiveStyle;
 import com.example.modifiedpvp.combat.adaptive.WeaponFamily;
+import com.example.modifiedpvp.combat.hybrid.HybridAction;
+import com.example.modifiedpvp.combat.hybrid.HybridCombatManager;
+import com.example.modifiedpvp.combat.hybrid.HybridResult;
 import com.example.modifiedpvp.mixin.DamageAbsorbInvoker;
 import com.example.modifiedpvp.network.ModNetworking;
 
@@ -106,6 +109,9 @@ public final class CombatActions {
 		exhaust(player, 0.12F);
 		play(player, SoundEvents.PLAYER_ATTACK_SWEEP, 0.7F, 1.35F);
 		burst(player, ParticleTypes.CLOUD, 6);
+		if (player instanceof ServerPlayer serverPlayer) {
+			HybridCombatManager.onWind(serverPlayer, false);
+		}
 		return true;
 	}
 
@@ -133,6 +139,9 @@ public final class CombatActions {
 		exhaust(player, 0.08F);
 		play(player, SoundEvents.PLAYER_ATTACK_SWEEP, 0.55F, 1.6F);
 		burst(player, ParticleTypes.CLOUD, 4);
+		if (player instanceof ServerPlayer serverPlayer) {
+			HybridCombatManager.onWind(serverPlayer, false);
+		}
 		return true;
 	}
 
@@ -191,7 +200,8 @@ public final class CombatActions {
 			LivingEntity target = thrustTarget(serverPlayer, range);
 			if (target != null) {
 				float pierce = 1.2F;
-				if (AdaptiveCombatManager.isReady(serverPlayer, WeaponFamily.SWORD, AdaptiveStyle.PONTA_PRECISAO)
+				if (!HybridCombatManager.claims(serverPlayer, HybridAction.SWORD_THRUST)
+						&& AdaptiveCombatManager.isReady(serverPlayer, WeaponFamily.SWORD, AdaptiveStyle.PONTA_PRECISAO)
 						&& target.getUUID().equals(AdaptiveCombatManager.readyTarget(serverPlayer, WeaponFamily.SWORD))) {
 					pierce *= AdaptiveCombatManager.config().swordPierceRatio();
 				}
@@ -219,6 +229,9 @@ public final class CombatActions {
 			return false;
 		}
 		state.startHeavy(player.level().getGameTime());
+		if (player instanceof ServerPlayer serverPlayer) {
+			HybridCombatManager.onHeavyStart(serverPlayer);
+		}
 		return true;
 	}
 
@@ -240,10 +253,11 @@ public final class CombatActions {
 			return;
 		}
 
-		float ratio = Math.min(1.0F, (chargedTicks - CombatRules.HEAVY_MIN_TICKS) / (float) (CombatRules.HEAVY_FULL_TICKS - CombatRules.HEAVY_MIN_TICKS));
+		float ratio = Math.min(1.0F, (chargedTicks - CombatRules.HEAVY_MIN_TICKS) / (float) (Math.max(CombatRules.HEAVY_MIN_TICKS + 1, CombatRules.HEAVY_FULL_TICKS - HybridCombatManager.heavyFavor(serverPlayer)) - CombatRules.HEAVY_MIN_TICKS));
 		int slice = ModEnchantments.level(serverPlayer.level(), ModEnchantments.SLICE, axe);
-		AdaptiveStyle axeStyle = AdaptiveCombatManager.readyStyle(serverPlayer, WeaponFamily.AXE);
-		boolean empowered = axeStyle != null;
+		boolean hybridOwns = HybridCombatManager.claims(serverPlayer, HybridAction.AXE_HEAVY);
+		AdaptiveStyle axeStyle = hybridOwns ? null : AdaptiveCombatManager.readyStyle(serverPlayer, WeaponFamily.AXE);
+		boolean empowered = !hybridOwns && axeStyle != null;
 		List<LivingEntity> targets = new ArrayList<>(targetsInLook(serverPlayer, CombatRules.HEAVY_RANGE, 0.2));
 		targets.sort(Comparator.comparingDouble(serverPlayer::distanceToSqr));
 		int hits = 0;
@@ -298,9 +312,14 @@ public final class CombatActions {
 		play(serverPlayer, SoundEvents.PLAYER_ATTACK_STRONG, 1.0F, 0.75F + ratio * 0.2F);
 		serverPlayer.level().sendParticles(ParticleTypes.SWEEP_ATTACK, serverPlayer.getX(), serverPlayer.getY(0.6), serverPlayer.getZ(), 1, 0.0, 0.0, 0.0, 0.0);
 		if (hits > 0) {
-			ComboSpecials.onHeavyResolved(serverPlayer, first, anyBlocked, true);
+			HybridResult hybrid = HybridCombatManager.onHeavy(serverPlayer, first, true, anyBlocked, ratio >= 1.0F);
+			if (!hybrid.exclusive()) {
+				ComboSpecials.onHeavyResolved(serverPlayer, first, anyBlocked, true);
+			}
 			ComboSpecials.onHeavySuccess(serverPlayer, comboHit);
 			serverPlayer.level().sendParticles(ParticleTypes.CRIT, serverPlayer.getX(), serverPlayer.getY(0.7), serverPlayer.getZ(), 12, 0.6, 0.3, 0.6, 0.08);
+		} else if (hybridOwns) {
+			HybridCombatManager.onHeavy(serverPlayer, first, false, anyBlocked, ratio >= 1.0F);
 		} else if (empowered) {
 			ComboSpecials.onHeavyResolved(serverPlayer, first, anyBlocked, false);
 		}

@@ -12,7 +12,8 @@ public enum CombatAction {
 	CYCLE_ARROW(8),
 	PARRY(9),
 	SPEAR_COUNTER(10),
-	COMBINED_STRIKE(11);
+	COMBINED_STRIKE(11),
+	AXE_GUARD(12);
 
 	private final int id;
 

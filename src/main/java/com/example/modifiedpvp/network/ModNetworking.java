@@ -3,6 +3,7 @@ package com.example.modifiedpvp.network;
 import com.example.modifiedpvp.combat.BowFeatures;
 import com.example.modifiedpvp.combat.CombatActions;
 import com.example.modifiedpvp.combat.SpearCombat;
+import com.example.modifiedpvp.combat.hybrid.HybridCombatManager;
 
 import net.fabricmc.fabric.api.networking.v1.PayloadTypeRegistry;
 import net.fabricmc.fabric.api.networking.v1.ServerPlayConnectionEvents;
@@ -20,6 +21,7 @@ public final class ModNetworking {
 		PayloadTypeRegistry.playS2C().register(SpearStatePayload.TYPE, SpearStatePayload.CODEC);
 		PayloadTypeRegistry.playS2C().register(SpearPressurePayload.TYPE, SpearPressurePayload.CODEC);
 		PayloadTypeRegistry.playS2C().register(AdaptiveStatePayload.TYPE, AdaptiveStatePayload.CODEC);
+		PayloadTypeRegistry.playS2C().register(HybridStatePayload.TYPE, HybridStatePayload.CODEC);
 		ServerPlayNetworking.registerGlobalReceiver(CombatActionPayload.TYPE, (payload, context) -> {
 			CombatAction action = payload.action();
 			if (action == null) {
@@ -61,6 +63,7 @@ public final class ModNetworking {
 			case PARRY -> CombatActions.tryParry(player);
 			case SPEAR_COUNTER -> SpearCombat.tryCounter(player);
 			case COMBINED_STRIKE -> CombatActions.tryCombinedStrike(player);
+			case AXE_GUARD -> HybridCombatManager.tryAdvance(player);
 		}
 	}
 
@@ -72,6 +75,12 @@ public final class ModNetworking {
 
 	public static void syncAdaptive(ServerPlayer player, AdaptiveStatePayload payload) {
 		if (ServerPlayNetworking.canSend(player, AdaptiveStatePayload.TYPE)) {
+			ServerPlayNetworking.send(player, payload);
+		}
+	}
+
+	public static void syncHybrid(ServerPlayer player, HybridStatePayload payload) {
+		if (ServerPlayNetworking.canSend(player, HybridStatePayload.TYPE)) {
 			ServerPlayNetworking.send(player, payload);
 		}
 	}
