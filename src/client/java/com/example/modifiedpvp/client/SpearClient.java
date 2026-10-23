@@ -14,6 +14,7 @@ public final class SpearClient {
 	private static int brokenTicks;
 	private static boolean enhanced;
 	private static boolean immune;
+	private static int style;
 
 	private SpearClient() {
 	}
@@ -56,20 +57,22 @@ public final class SpearClient {
 		selfBrokenTicks = selfBroken;
 	}
 
-	public static void applyPressure(int entityId, int value, int broken, boolean enhancedBreak, boolean ruptureImmune) {
+	public static void applyPressure(int entityId, int value, int broken, boolean enhancedBreak, boolean ruptureImmune, int styleHint) {
 		targetId = entityId;
 		pressure = value;
 		brokenTicks = broken;
 		enhanced = enhancedBreak;
 		immune = ruptureImmune;
+		style = styleHint;
 		if (value <= 0 && broken <= 0 && !ruptureImmune) {
 			targetId = -1;
+			style = 0;
 		}
 	}
 
 	public static void clear() {
 		applyState(0, 0, 0, 1, 0, 0, 0, 0);
-		applyPressure(-1, 0, 0, false, false);
+		applyPressure(-1, 0, 0, false, false, 0);
 	}
 
 	public static boolean guarding() {
@@ -121,5 +124,9 @@ public final class SpearClient {
 
 	public static int selfBrokenTicks() {
 		return selfBrokenTicks;
+	}
+
+	public static int style() {
+		return style;
 	}
 }

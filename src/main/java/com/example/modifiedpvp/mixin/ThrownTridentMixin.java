@@ -19,6 +19,7 @@ public class ThrownTridentMixin {
 
 	@Inject(method = "tick", at = @At("RETURN"))
 	private void modifiedpvp$drain(CallbackInfo callback) {
+		TridentEffects.watchReturn((ThrownTrident) (Object) this);
 		TridentEffects.drainWater((ThrownTrident) (Object) this);
 	}
 }

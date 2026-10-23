@@ -2,10 +2,26 @@ package com.example.modifiedpvp.combat;
 
 import java.util.ArrayDeque;
 import java.util.ArrayList;
+import java.util.EnumSet;
+import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
+import java.util.Map;
+import java.util.UUID;
 
 import com.example.modifiedpvp.ModifiedPvP;
+import com.example.modifiedpvp.combat.adaptive.AdaptiveCombatManager;
+import com.example.modifiedpvp.combat.adaptive.AdaptiveCombatState;
+import com.example.modifiedpvp.combat.adaptive.AdaptiveStyle;
+import com.example.modifiedpvp.combat.adaptive.CombatActionType;
+import com.example.modifiedpvp.combat.adaptive.ContextTag;
+import com.example.modifiedpvp.combat.adaptive.FamilyCombatState;
+import com.example.modifiedpvp.combat.adaptive.FamilyPhase;
+import com.example.modifiedpvp.combat.adaptive.FinisherEffects;
+import com.example.modifiedpvp.combat.adaptive.WeaponFamily;
+import com.example.modifiedpvp.combat.hybrid.HybridCombatManager;
+import com.example.modifiedpvp.combat.hybrid.HybridResult;
+import com.example.modifiedpvp.combat.hybrid.HybridStyleId;
 
 import net.fabricmc.fabric.api.attachment.v1.AttachmentRegistry;
 import net.fabricmc.fabric.api.attachment.v1.AttachmentSyncPredicate;
@@ -20,7 +36,9 @@ import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.sounds.SoundEvents;
 import net.minecraft.sounds.SoundSource;
+import net.minecraft.tags.DamageTypeTags;
 import net.minecraft.world.damagesource.DamageSource;
+import net.minecraft.world.entity.EntityType;
 import net.minecraft.world.effect.MobEffectInstance;
 import net.minecraft.world.effect.MobEffects;
 import net.minecraft.world.entity.Entity;
@@ -39,6 +57,8 @@ public final class ComboSpecials {
 			.copyOnDeath()
 			.syncWith(ComboData.STREAM_CODEC, AttachmentSyncPredicate.targetOnly()));
 
+	private static final Map<UUID, Long> CART_COMBO_GRACE = new HashMap<>();
+	private static final int CART_COMBO_GRACE_TICKS = 60;
 	private static final List<PendingSlow> PENDING_SLOWS = new ArrayList<>();
 	private static final List<Stun> STUNS = new ArrayList<>();
 	private static final ArrayDeque<HurtFrame> HURTS = new ArrayDeque<>();
@@ -52,10 +72,17 @@ public final class ComboSpecials {
 		ServerPlayConnectionEvents.DISCONNECT.register((handler, server) -> {
 			if (handler.player != null) {
 				clearCombat(handler.player);
+				AdaptiveCombatManager.clear(handler.player);
+				AdaptiveCombatManager.forget(handler.player.getUUID());
+				HybridCombatManager.clear(handler.player);
 				ControlGuard.forget(handler.player.getUUID());
 			}
 		});
-		ServerEntityWorldChangeEvents.AFTER_PLAYER_CHANGE_WORLD.register((player, origin, destination) -> clearCombat(player));
+		ServerEntityWorldChangeEvents.AFTER_PLAYER_CHANGE_WORLD.register((player, origin, destination) -> {
+			clearCombat(player);
+			AdaptiveCombatManager.clear(player);
+			HybridCombatManager.clear(player);
+		});
 	}
 
 	public static void tick() {
@@ -71,30 +98,80 @@ public final class ComboSpecials {
 	}
 
 	public static void onMeleeHit(ServerPlayer player) {
+		onMeleeHit(player, null, false);
+	}
+
+	public static void onMeleeHit(ServerPlayer player, LivingEntity target, boolean blocked) {
 		if (WeaponStats.isDualWielding(player)) {
-			advanceDual(player, 1);
-		} else if (WeaponStats.isSword(player.getMainHandItem())) {
-			advanceSword(player, 1);
+			AdaptiveCombatManager.record(player, WeaponFamily.DUAL_SWORD, CombatActionType.MELEE_HIT, target, true, blocked, false, 1, EnumSet.noneOf(ContextTag.class));
+			return;
+		}
+		if (WeaponStats.isSword(player.getMainHandItem())) {
+			HybridResult hybrid = HybridCombatManager.onSwordHit(player, target, true, blocked);
+			if (hybrid.exclusive()) {
+				return;
+			}
+			EnumSet<ContextTag> tags = EnumSet.noneOf(ContextTag.class);
+			if (AdaptiveCombatManager.isReady(player, WeaponFamily.SWORD, AdaptiveStyle.RESPOSTA_LAMINA)) {
+				tags.add(ContextTag.COUNTER);
+			}
+			AdaptiveStyle consumed = AdaptiveCombatManager.record(player, WeaponFamily.SWORD, CombatActionType.MELEE_HIT, target, true, blocked, false, 1, tags);
+			if (consumed == AdaptiveStyle.RESPOSTA_LAMINA && target != null) {
+				FinisherEffects.shove(player, target, 0.25, AdaptiveCombatManager.config());
+				FinisherEffects.burst(target, 8);
+			}
+		} else if (player.getMainHandItem().is(net.minecraft.world.item.Items.TRIDENT)) {
+			if (player.isAutoSpinAttack()) {
+				onRiptideHit(player, target);
+			} else {
+				AdaptiveStyle consumed = AdaptiveCombatManager.record(player, WeaponFamily.TRIDENT, CombatActionType.TRIDENT_MELEE_HIT, target, true, blocked, false, 1, EnumSet.noneOf(ContextTag.class));
+				if (consumed == AdaptiveStyle.DOMINIO_MARES && target != null) {
+					FinisherEffects.shove(player, target, AdaptiveCombatManager.config().tridentShove(), AdaptiveCombatManager.config());
+				}
+			}
 		}
 	}
 
 	public static void onThrustHit(ServerPlayer player) {
-		if (WeaponStats.isDualWielding(player)) {
-			advanceDual(player, 1);
-		} else if (WeaponStats.isSword(player.getMainHandItem())) {
-			advanceSword(player, 2);
+		onThrustHit(player, null, true);
+	}
+
+	public static void onThrustHit(ServerPlayer player, LivingEntity target, boolean hit) {
+		HybridResult hybrid = HybridCombatManager.onThrust(player, target, hit);
+		if (hybrid.exclusive()) {
+			return;
+		}
+		WeaponFamily family = WeaponStats.isDualWielding(player) ? WeaponFamily.DUAL_SWORD : WeaponFamily.SWORD;
+		AdaptiveStyle consumed = AdaptiveCombatManager.record(player, family, CombatActionType.THRUST_HIT, target, hit, false, false, 1, EnumSet.noneOf(ContextTag.class));
+		if (consumed == AdaptiveStyle.PONTA_PRECISAO && target != null) {
+			FinisherEffects.burst(target, 6);
 		}
 	}
 
-	public static void onOffhandHit(ServerPlayer player, boolean hit) {
+	public static void onCombinedHit(ServerPlayer player, LivingEntity target, boolean hit, boolean blocked) {
 		if (!WeaponStats.isDualWielding(player)) {
 			return;
 		}
 		if (!hit) {
 			ControlGuard.interrupt(player, player, CombatRules.DUAL_EXPOSE_TICKS);
+			AdaptiveCombatManager.record(player, WeaponFamily.DUAL_SWORD, CombatActionType.OFFHAND_COMBINED_HIT, target, false, blocked, false, 1, EnumSet.noneOf(ContextTag.class));
 			return;
 		}
-		advanceDual(player, 2);
+		AdaptiveStyle consumed = AdaptiveCombatManager.record(player, WeaponFamily.DUAL_SWORD, CombatActionType.OFFHAND_COMBINED_HIT, target, true, blocked, false, 1, EnumSet.noneOf(ContextTag.class));
+		if (consumed != null && target != null) {
+			FinisherEffects.burst(target, consumed == AdaptiveStyle.ALTERNANCIA_PERFEITA ? 10 : 6);
+		}
+	}
+
+	public static void onOffhandHit(ServerPlayer player, boolean hit) {
+		onCombinedHit(player, null, hit, false);
+	}
+
+	public static void onPerfectParry(ServerPlayer player, LivingEntity attacker) {
+		if (WeaponStats.isSword(player.getMainHandItem())) {
+			WeaponFamily family = WeaponStats.isDualWielding(player) ? WeaponFamily.DUAL_SWORD : WeaponFamily.SWORD;
+			AdaptiveCombatManager.record(player, family, CombatActionType.PERFECT_COUNTER, attacker, true, false, true, 1, EnumSet.of(ContextTag.COUNTER));
+		}
 	}
 
 	public static void onHeavySuccess(ServerPlayer player, boolean comboHit) {
@@ -110,7 +187,7 @@ public final class ComboSpecials {
 			}
 		}
 		if (comboHit && unlocked(player, Style.AXE)) {
-			dirty |= pushCombo(player, data, Style.AXE, null);
+			AdaptiveCombatManager.record(player, WeaponFamily.AXE, CombatActionType.HEAVY_FULL_HIT, null, true, false, false, 1, EnumSet.noneOf(ContextTag.class));
 		}
 		if (dirty) {
 			save(player, data);
@@ -132,114 +209,81 @@ public final class ComboSpecials {
 			}
 		}
 		if (unlocked(player, Style.BOW)) {
-			dirty |= pushCombo(player, data, Style.BOW, null);
+			ComboData bowData = player.getAttached(ATTACHMENT);
+			if (bowData != null && bowData.bowShotsLeft > 0) {
+				FinisherEffects.shove(player, target, AdaptiveCombatManager.config().bowKnockback(), AdaptiveCombatManager.config());
+				ComboData clear = edit(player);
+				clear.bowShotsLeft = 0;
+				save(player, clear);
+			} else {
+				AdaptiveCombatManager.record(player, WeaponFamily.BOW, CombatActionType.BOW_ARROW_HIT, target, true, false, false, 1, EnumSet.noneOf(ContextTag.class));
+			}
 		}
 		if (dirty) {
 			save(player, data);
 		}
 	}
 
-	public static void onTridentPull(ServerPlayer player, LivingEntity target) {
-		if (target instanceof Drowned) {
-			grant(player, Style.TRIDENT);
-		}
-		if (!(target instanceof Mob) && !(target instanceof Player)) {
+	public static void onTridentReturn(ServerPlayer player, UUID projectileId) {
+		if (!(player.level() instanceof ServerLevel)) {
 			return;
 		}
-		if (!unlocked(player, Style.TRIDENT)) {
-			return;
+		AdaptiveCombatManager.record(player, WeaponFamily.TRIDENT, CombatActionType.TRIDENT_LOYALTY_RETURN, null, true, false, false, 1, EnumSet.of(ContextTag.LOYALTY));
+	}
+
+	public static void onDamaged(ServerPlayer player) {
+		onDamaged(player, null);
+	}
+
+	public static void onDamaged(ServerPlayer player, DamageSource source) {
+		if (minecartComboDamage(player, source)) {
+			AdaptiveCombatManager.interrupt(player, family -> family != WeaponFamily.BOW);
+		} else {
+			AdaptiveCombatManager.interrupt(player);
 		}
-		ComboData data = edit(player);
-		if (pushCombo(player, data, Style.TRIDENT, target)) {
+		CrossbowFeatures.interrupt(player);
+	}
+
+	public static boolean isGuarded(Player player) {
+		return AdaptiveCombatManager.buildingUninterruptible(player);
+	}
+
+	public static boolean autoCrit(Player player) {
+		return AdaptiveCombatManager.isReady(player, WeaponFamily.SWORD, AdaptiveStyle.RITMO_CORTE)
+				|| AdaptiveCombatManager.isReady(player, WeaponFamily.SWORD, AdaptiveStyle.RESPOSTA_LAMINA);
+	}
+
+	public static boolean autoCrit(Player player, LivingEntity target) {
+		if (player instanceof ServerPlayer server && HybridCombatManager.claims(server, com.example.modifiedpvp.combat.hybrid.HybridAction.SWORD_HIT)) {
+			return false;
+		}
+		if (AdaptiveCombatManager.isReady(player, WeaponFamily.SWORD, AdaptiveStyle.RESPOSTA_LAMINA)) {
+			return true;
+		}
+		return AdaptiveCombatManager.isReady(player, WeaponFamily.SWORD, AdaptiveStyle.RITMO_CORTE);
+	}
+
+	public static boolean rapidBow(Player player) {
+		return AdaptiveCombatManager.isReady(player, WeaponFamily.BOW);
+	}
+
+	public static boolean dualFlurry(Player player) {
+		return AdaptiveCombatManager.isReady(player, WeaponFamily.DUAL_SWORD, AdaptiveStyle.PRESSAO_ALTERNADA)
+				|| AdaptiveCombatManager.isReady(player, WeaponFamily.DUAL_SWORD, AdaptiveStyle.ALTERNANCIA_PERFEITA);
+	}
+
+	public static void consumeBowShot(ServerPlayer player) {
+		AdaptiveStyle style = AdaptiveCombatManager.readyStyle(player, WeaponFamily.BOW);
+		if (style == AdaptiveStyle.MIRA_PERFEITA
+				&& AdaptiveCombatManager.tryConsume(player, WeaponFamily.BOW, AdaptiveStyle.MIRA_PERFEITA, CombatActionType.BOW_ARROW_HIT, null, true, false)) {
+			ComboData data = edit(player);
+			data.bowShotsLeft = 1;
 			save(player, data);
 		}
 	}
 
-	public static void onDamaged(ServerPlayer player) {
-		ComboData data = player.getAttached(ATTACHMENT);
-		if (data == null) {
-			return;
-		}
-		long now = player.level().getGameTime();
-		boolean sword = active(data.swordCombo, data.swordWindowUntil, now);
-		boolean dual = active(data.dualCombo, data.dualWindowUntil, now);
-		boolean bow = active(data.bowCombo, data.bowWindowUntil, now);
-		boolean shield = active(data.shieldCombo, data.shieldWindowUntil, now);
-		if (!sword && !dual && !bow && !shield) {
-			return;
-		}
-		data = data.copy();
-		if (sword) {
-			data.swordCombo = 0;
-			data.swordWindowUntil = 0L;
-		}
-		if (dual) {
-			data.dualCombo = 0;
-			data.dualWindowUntil = 0L;
-		}
-		if (bow) {
-			data.bowCombo = 0;
-			data.bowWindowUntil = 0L;
-		}
-		if (shield) {
-			data.shieldCombo = 0;
-			data.shieldWindowUntil = 0L;
-		}
-		save(player, data);
-		CrossbowFeatures.interrupt(player);
-		player.displayClientMessage(Component.translatable("combat.modifiedpvp.combo.interrupted"), true);
-	}
-
-	public static boolean isGuarded(Player player) {
-		ComboData data = player.getAttached(ATTACHMENT);
-		if (data == null) {
-			return false;
-		}
-		long now = player.level().getGameTime();
-		return active(data.axeCombo, data.axeWindowUntil, now)
-				|| active(data.tridentCombo, data.tridentWindowUntil, now)
-				|| active(data.maceCombo, data.maceWindowUntil, now);
-	}
-
-	public static boolean autoCrit(Player player) {
-		ComboData data = player.getAttached(ATTACHMENT);
-		if (data == null || player.level().getGameTime() >= data.swordBuffUntil) {
-			return false;
-		}
-		if (player instanceof ServerPlayer serverPlayer) {
-			data = data.copy();
-			data.swordBuffUntil = 0L;
-			save(serverPlayer, data);
-		}
-		return true;
-	}
-
-	public static boolean rapidBow(Player player) {
-		ComboData data = player.getAttached(ATTACHMENT);
-		return data != null && data.bowShotsLeft > 0 && player.level().getGameTime() < data.bowBuffUntil;
-	}
-
-	public static boolean dualFlurry(Player player) {
-		ComboData data = player.getAttached(ATTACHMENT);
-		return data != null && player.level().getGameTime() < data.dualBuffUntil;
-	}
-
-	public static void consumeBowShot(ServerPlayer player) {
-		ComboData data = player.getAttached(ATTACHMENT);
-		if (data == null || data.bowShotsLeft <= 0) {
-			return;
-		}
-		data = data.copy();
-		data.bowShotsLeft--;
-		if (data.bowShotsLeft <= 0) {
-			data.bowBuffUntil = 0L;
-		}
-		save(player, data);
-	}
-
 	public static boolean hasAxeEmpower(Player player) {
-		ComboData data = player.getAttached(ATTACHMENT);
-		return data != null && data.axeEmpowered;
+		return AdaptiveCombatManager.isReady(player, WeaponFamily.AXE);
 	}
 
 	public static void beginHurt(ServerPlayer player) {
@@ -285,7 +329,30 @@ public final class ComboSpecials {
 			}
 		}
 		if (unlocked(player, Style.SHIELD)) {
-			dirty |= pushCombo(player, data, Style.SHIELD, null);
+			CombatActionType type = CombatActionType.SHIELD_BLOCK;
+			EnumSet<ContextTag> tags = EnumSet.noneOf(ContextTag.class);
+			if (ShieldFeatures.timedBlock(player)) {
+				type = CombatActionType.SHIELD_BLOCK_TIMED;
+				tags.add(ContextTag.PERFECT_TIMING);
+			}
+			LivingEntity attacker = source.getEntity() instanceof LivingEntity living ? living : null;
+			LivingEntity ally = ShieldFeatures.threatenedAlly(player, source);
+			if (ally != null) {
+				type = CombatActionType.SHIELD_INTERCEPT_ALLY;
+				tags.add(ContextTag.ALLY_THREAT);
+			}
+			AdaptiveStyle consumed = AdaptiveCombatManager.record(player, WeaponFamily.SHIELD, type, attacker, true, true, type == CombatActionType.SHIELD_BLOCK_TIMED, 1, tags);
+			HybridCombatManager.onShield(player, attacker, type == CombatActionType.SHIELD_BLOCK_TIMED);
+			if (consumed == AdaptiveStyle.INTERCEPTACAO && attacker != null) {
+				FinisherEffects.interrupt(player, attacker, AdaptiveCombatManager.config().shieldShockTicks());
+				data.shieldEmpowered = true;
+				empowered = true;
+				dirty = true;
+			} else if (consumed == AdaptiveStyle.GUARDA_PROTECAO || consumed == AdaptiveStyle.GUARDA_INABALAVEL) {
+				data.shieldEmpowered = true;
+				empowered = true;
+				dirty = true;
+			}
 		}
 		if (dirty) {
 			save(player, data);
@@ -305,7 +372,12 @@ public final class ComboSpecials {
 			dirty = true;
 		}
 		if (unlocked(player, Style.MACE)) {
-			dirty |= pushCombo(player, data, Style.MACE, null);
+			boolean smash = !player.onGround() && player.fallDistance >= 1.5F;
+			boolean windBurst = smash && ModEnchantments.level(player.level(), HybridCombatManager.WIND_BURST, player.getMainHandItem()) > 0;
+			HybridResult hybrid = HybridCombatManager.onMace(player, target, smash, windBurst);
+			if (!hybrid.exclusive()) {
+				AdaptiveCombatManager.record(player, WeaponFamily.MACE, CombatActionType.CHAIN_ENTITY_IMPACT, target, true, false, false, 1, EnumSet.noneOf(ContextTag.class));
+			}
 		}
 		if (dirty) {
 			save(player, data);
@@ -316,16 +388,15 @@ public final class ComboSpecials {
 	}
 
 	public static void onMaceChain(ServerPlayer player, Vec3 center) {
-		if (!hasCombatant(player, center)) {
+		onMaceChain(player, center, false);
+	}
+
+	public static void onMaceChain(ServerPlayer player, Vec3 center, boolean entityHit) {
+		if (!hasCombatant(player, center) && !entityHit) {
 			return;
 		}
 		ComboData data = edit(player);
-		boolean empowered = data.maceEmpowered;
 		boolean dirty = false;
-		if (empowered) {
-			data.maceEmpowered = false;
-			dirty = true;
-		}
 		if (data.chainHits < CombatRules.MACE_CHAIN_GOAL) {
 			data.chainHits++;
 			dirty = true;
@@ -336,14 +407,48 @@ public final class ComboSpecials {
 			}
 		}
 		if (unlocked(player, Style.MACE)) {
-			dirty |= pushCombo(player, data, Style.MACE, null);
+			CombatActionType type = entityHit ? CombatActionType.CHAIN_ENTITY_IMPACT : CombatActionType.CHAIN_BLOCK_IMPACT;
+			HybridCombatManager.onWind(player, false);
+			AdaptiveStyle consumed = AdaptiveCombatManager.record(player, WeaponFamily.MACE, type, null, true, false, false, 1, EnumSet.noneOf(ContextTag.class));
+			if (consumed == AdaptiveStyle.CONTROLE_IMPACTO) {
+				data.maceEmpowered = true;
+				dirty = true;
+			} else if (consumed == AdaptiveStyle.PRECISAO_CORRENTE) {
+				data.maceEmpowered = true;
+				dirty = true;
+			}
 		}
 		if (dirty) {
 			save(player, data);
 		}
-		if (empowered) {
+		if (data.maceEmpowered && !entityHit) {
 			gather(player, center);
 		}
+	}
+
+	public static void onMaceReturn(ServerPlayer player) {
+		if (unlocked(player, Style.MACE)) {
+			AdaptiveCombatManager.record(player, WeaponFamily.MACE, CombatActionType.CHAIN_RETURN, null, true, false, false, 1, EnumSet.noneOf(ContextTag.class));
+		}
+	}
+
+	public static boolean maceEmpowered(Player player) {
+		ComboData data = player.getAttached(ATTACHMENT);
+		return data != null && data.maceEmpowered;
+	}
+
+	public static int maceReturnCooldown(ServerPlayer player) {
+		if (AdaptiveCombatManager.isReady(player, WeaponFamily.MACE, AdaptiveStyle.PRECISAO_CORRENTE) || maceEmpowered(player)) {
+			return AdaptiveCombatManager.config().maceReturnCooldown();
+		}
+		return CombatRules.MACE_CHAIN_COOLDOWN;
+	}
+
+	public static double maceShockwaveScale(ServerPlayer player) {
+		if (AdaptiveCombatManager.readyStyle(player, WeaponFamily.MACE) == AdaptiveStyle.CONTROLE_IMPACTO || maceEmpowered(player)) {
+			return AdaptiveCombatManager.config().maceRepulseStrength();
+		}
+		return 1.0;
 	}
 
 	public static void consumeAxeEmpower(ServerPlayer player) {
@@ -381,6 +486,8 @@ public final class ComboSpecials {
 	private static void onDeath(LivingEntity victim, DamageSource source) {
 		if (victim instanceof ServerPlayer deadPlayer) {
 			clearCombat(deadPlayer);
+			AdaptiveCombatManager.clear(deadPlayer);
+			HybridCombatManager.clear(deadPlayer);
 			ControlGuard.forget(deadPlayer.getUUID());
 		}
 		if (!(victim instanceof Mob) || !(source.getEntity() instanceof ServerPlayer player)) {
@@ -471,6 +578,7 @@ public final class ComboSpecials {
 	}
 
 	private static void clearCombat(ServerPlayer player) {
+		CART_COMBO_GRACE.remove(player.getUUID());
 		ComboData data = player.getAttached(ATTACHMENT);
 		if (data == null) {
 			return;
@@ -548,6 +656,35 @@ public final class ComboSpecials {
 		}
 	}
 
+	public static void rememberCrown(ServerPlayer player, HybridStyleId style) {
+		int bit = switch (style) {
+			case CROWN_OPENING -> 1;
+			case KING_PRESSURE -> 2;
+			case LAST_WORD -> 4;
+			default -> 0;
+		};
+		if (bit == 0) {
+			return;
+		}
+		ComboData data = edit(player);
+		int next = data.crownMask | bit;
+		if (next == data.crownMask) {
+			return;
+		}
+		data.crownMask = next;
+		save(player, data);
+		if ((next & 7) == 7) {
+			var server = player.level().getServer();
+			if (server == null) {
+				return;
+			}
+			AdvancementHolder holder = server.getAdvancements().get(ModifiedPvP.id("combat/crown"));
+			if (holder != null) {
+				player.getAdvancements().award(holder, "unlock");
+			}
+		}
+	}
+
 	private static void grant(ServerPlayer player, Style style) {
 		if (unlocked(player, style)) {
 			return;
@@ -560,6 +697,160 @@ public final class ComboSpecials {
 		if (holder != null) {
 			player.getAdvancements().award(holder, "unlock");
 		}
+	}
+
+	public static boolean unlockedFamily(ServerPlayer player, WeaponFamily family) {
+		if (family == WeaponFamily.CROSSBOW) {
+			return unlocked(player, Style.BOW);
+		}
+		if (family == WeaponFamily.SPEAR) {
+			return unlocked(player, "combat/spear");
+		}
+		Style style = switch (family) {
+			case SWORD -> Style.SWORD;
+			case DUAL_SWORD -> Style.DUAL;
+			case AXE -> Style.AXE;
+			case BOW -> Style.BOW;
+			case TRIDENT -> Style.TRIDENT;
+			case SHIELD -> Style.SHIELD;
+			case MACE -> Style.MACE;
+			default -> null;
+		};
+		return style != null && unlocked(player, style);
+	}
+
+	public static void storeFamilyCooldown(ServerPlayer player, WeaponFamily family, long until) {
+		ComboData data = edit(player);
+		setFamilyCooldown(data, family, until);
+		save(player, data);
+	}
+
+	public static void storeFamilyCooldowns(ServerPlayer player, AdaptiveCombatState state) {
+		ComboData data = edit(player);
+		for (WeaponFamily family : WeaponFamily.values()) {
+			setFamilyCooldown(data, family, state.family(family).cooldownUntil());
+		}
+		save(player, data);
+	}
+
+	public static void loadFamilyCooldowns(ServerPlayer player, AdaptiveCombatState state) {
+		ComboData data = player.getAttached(ATTACHMENT);
+		if (data == null) {
+			return;
+		}
+		for (WeaponFamily family : WeaponFamily.values()) {
+			FamilyCombatState familyState = state.family(family);
+			long until = familyCooldown(data, family);
+			familyState.setCooldownUntil(until);
+			if (until > 0L) {
+				familyState.setPhase(FamilyPhase.COOLDOWN);
+			}
+		}
+	}
+
+	public static void onHeavyResolved(ServerPlayer player, LivingEntity target, boolean blocked, boolean hit) {
+		if (!unlocked(player, Style.AXE)) {
+			return;
+		}
+		CombatActionType type = blocked ? CombatActionType.HEAVY_BLOCKED : CombatActionType.HEAVY_FULL_HIT;
+		AdaptiveCombatManager.record(player, WeaponFamily.AXE, type, target, hit, blocked, false, hit ? 1 : 0, EnumSet.noneOf(ContextTag.class));
+	}
+
+	public static void onBowCartIgnition(ServerPlayer player) {
+		CART_COMBO_GRACE.put(player.getUUID(), player.level().getGameTime() + CART_COMBO_GRACE_TICKS);
+		if (unlocked(player, Style.BOW)) {
+			AdaptiveCombatManager.record(player, WeaponFamily.BOW, CombatActionType.BOW_CART_IGNITION, null, true, false, false, 1, EnumSet.of(ContextTag.CART_IGNITION));
+		}
+	}
+
+	private static boolean minecartComboDamage(ServerPlayer player, DamageSource source) {
+		Long grace = CART_COMBO_GRACE.get(player.getUUID());
+		boolean recentCartHit = grace != null && player.level().getGameTime() < grace;
+		if (source == null) {
+			return recentCartHit;
+		}
+		Entity entity = source.getDirectEntity() != null ? source.getDirectEntity() : source.getEntity();
+		if (entity != null && entity.getType() == EntityType.TNT_MINECART) {
+			return true;
+		}
+		return recentCartHit && source.is(DamageTypeTags.IS_EXPLOSION);
+	}
+
+	public static void onFireworkSplash(ServerPlayer player, LivingEntity focus, int affected, boolean grapple) {
+		if (grapple || affected <= 0) {
+			return;
+		}
+		AdaptiveStyle consumed = AdaptiveCombatManager.record(player, WeaponFamily.CROSSBOW, CombatActionType.CROSSBOW_FIREWORK_SPLASH, focus, true, false, false, affected, EnumSet.noneOf(ContextTag.class));
+		if (consumed == null || focus == null) {
+			return;
+		}
+		double strength = consumed == AdaptiveStyle.PRECISAO_EXPLOSIVA
+				? AdaptiveCombatManager.config().crossbowFocus()
+				: AdaptiveCombatManager.config().crossbowScatter();
+		FinisherEffects.shove(player, focus, strength, AdaptiveCombatManager.config());
+	}
+
+	public static void onTridentThrowHit(ServerPlayer player, LivingEntity target, boolean channeling) {
+		if (target instanceof Drowned) {
+			grant(player, Style.TRIDENT);
+		}
+		EnumSet<ContextTag> tags = EnumSet.noneOf(ContextTag.class);
+		CombatActionType type = CombatActionType.TRIDENT_THROW_HIT;
+		if (channeling) {
+			tags.add(ContextTag.CHANNELING_VALID);
+			type = CombatActionType.CHANNELING_HIT;
+		}
+		AdaptiveStyle consumed = AdaptiveCombatManager.record(player, WeaponFamily.TRIDENT, type, target, true, false, false, 1, tags);
+		if (consumed == AdaptiveStyle.DOMINIO_TEMPESTADE && target != null && !channeling) {
+			FinisherEffects.shove(player, target, AdaptiveCombatManager.config().tridentShove(), AdaptiveCombatManager.config());
+		}
+	}
+
+	public static void onRiptideHit(ServerPlayer player, LivingEntity target) {
+		AdaptiveStyle consumed = AdaptiveCombatManager.record(player, WeaponFamily.TRIDENT, CombatActionType.RIPTIDE_HIT, target, true, false, false, 1, EnumSet.of(ContextTag.RIPTIDE, ContextTag.WET));
+		if (consumed == AdaptiveStyle.DOMINIO_MARES && target != null) {
+			FinisherEffects.shove(player, target, AdaptiveCombatManager.config().tridentShove(), AdaptiveCombatManager.config());
+		}
+	}
+
+	private static long familyCooldown(ComboData data, WeaponFamily family) {
+		return switch (family) {
+			case SWORD -> data.swordCooldownUntil;
+			case DUAL_SWORD -> data.dualCooldownUntil;
+			case AXE -> data.axeCooldownUntil;
+			case BOW -> data.bowCooldownUntil;
+			case TRIDENT -> data.tridentCooldownUntil;
+			case SHIELD -> data.shieldCooldownUntil;
+			case MACE -> data.maceCooldownUntil;
+			case CROSSBOW -> data.crossbowCooldownUntil;
+			case SPEAR -> data.spearCooldownUntil;
+		};
+	}
+
+	private static void setFamilyCooldown(ComboData data, WeaponFamily family, long until) {
+		switch (family) {
+			case SWORD -> data.swordCooldownUntil = until;
+			case DUAL_SWORD -> data.dualCooldownUntil = until;
+			case AXE -> data.axeCooldownUntil = until;
+			case BOW -> data.bowCooldownUntil = until;
+			case TRIDENT -> data.tridentCooldownUntil = until;
+			case SHIELD -> data.shieldCooldownUntil = until;
+			case MACE -> data.maceCooldownUntil = until;
+			case CROSSBOW -> data.crossbowCooldownUntil = until;
+			case SPEAR -> data.spearCooldownUntil = until;
+		}
+	}
+
+	private static boolean unlocked(ServerPlayer player, String path) {
+		if (ModGameRules.unlockSpecials(player)) {
+			return true;
+		}
+		var server = player.level().getServer();
+		if (server == null) {
+			return false;
+		}
+		AdvancementHolder holder = server.getAdvancements().get(ModifiedPvP.id(path));
+		return holder != null && player.getAdvancements().getOrStartProgress(holder).isDone();
 	}
 
 	private static boolean unlocked(ServerPlayer player, Style style) {

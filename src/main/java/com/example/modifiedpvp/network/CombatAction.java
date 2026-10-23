@@ -11,7 +11,9 @@ public enum CombatAction {
 	HEAVY_CANCEL(7),
 	CYCLE_ARROW(8),
 	PARRY(9),
-	SPEAR_COUNTER(10);
+	SPEAR_COUNTER(10),
+	COMBINED_STRIKE(11),
+	AXE_GUARD(12);
 
 	private final int id;
 

@@ -22,10 +22,11 @@ import org.spongepowered.asm.mixin.injection.callback.CallbackInfoReturnable;
 public class BowItemMixin {
 	@Redirect(method = "releaseUsing", at = @At(value = "INVOKE", target = "Lnet/minecraft/world/item/BowItem;getPowerForTime(I)F"))
 	private float modifiedpvp$offhandDraw(int ticks, ItemStack stack, Level level, LivingEntity entity, int remaining) {
+		int drawn = BowFeatures.scaledDrawTicks(entity, ticks);
 		if (entity instanceof Player player && ComboSpecials.rapidBow(player)) {
-			return 1.0F;
+			drawn = Math.round(drawn / com.example.modifiedpvp.combat.adaptive.AdaptiveCombatManager.config().bowDrawScale());
 		}
-		return BowItem.getPowerForTime(BowFeatures.scaledDrawTicks(entity, ticks));
+		return BowItem.getPowerForTime(drawn);
 	}
 
 	@Inject(method = "shootProjectile", at = @At("HEAD"))

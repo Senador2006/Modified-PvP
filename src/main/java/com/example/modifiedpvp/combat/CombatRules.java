@@ -67,9 +67,9 @@ public final class CombatRules {
 	public static final int MACE_CHAIN_COOLDOWN = 30;
 	public static final float MACE_CHAIN_DAMAGE_RATIO = 0.5F;
 	public static final double MACE_SHOCKWAVE_RADIUS = 3.5;
-	public static final double MACE_SHOCKWAVE_STRENGTH = 1.1;
-	public static final double MACE_SHOCKWAVE_LIFT = 0.42;
-	public static final double MACE_SHOCKWAVE_SELF_STRENGTH = 1.2;
+	public static final double MACE_SHOCKWAVE_STRENGTH = 1.7;
+	public static final double MACE_SHOCKWAVE_LIFT = 0.72;
+	public static final double MACE_SHOCKWAVE_SELF_STRENGTH = 1.65;
 
 	public static final float COMBO_MIN_STRENGTH = 0.9F;
 	public static final int COMBO_WINDOW_SWORD = 40;
@@ -138,7 +138,7 @@ public final class CombatRules {
 
 	public static final float SHOTGUN_PLAYER_FALLOFF = 0.5F;
 	public static final float DOUBLE_ARROW_PVP_RATIO = 0.4F;
-	public static final double MACE_PVP_SELF_STRENGTH = 0.55;
+	public static final double MACE_PVP_SELF_STRENGTH = 1.25;
 
 	private CombatRules() {
 	}

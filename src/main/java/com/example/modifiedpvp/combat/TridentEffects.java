@@ -1,8 +1,13 @@
 package com.example.modifiedpvp.combat;
 
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
+import java.util.Map;
+import java.util.UUID;
+
+import com.example.modifiedpvp.combat.hybrid.HybridCombatManager;
 
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.particles.ParticleTypes;
@@ -27,6 +32,8 @@ import net.minecraft.world.entity.projectile.arrow.ThrownTrident;
 
 public final class TridentEffects {
 	private static final List<Hook> HOOKS = new ArrayList<>();
+	private static final Map<UUID, Long> PULL_LOCK = new HashMap<>();
+	private static final Map<UUID, UUID> RETURNED = new HashMap<>();
 
 	private TridentEffects() {
 	}
@@ -41,31 +48,56 @@ public final class TridentEffects {
 		}
 		ItemStack stack = tridentStack(trident);
 		int loyalty = ModEnchantments.level(level, Enchantments.LOYALTY, stack);
-		if (loyalty <= 0) {
+		int pull = ModEnchantments.level(level, ModEnchantments.PULL, stack);
+		boolean storm = level.isThundering();
+		boolean channeling = ModEnchantments.level(level, Enchantments.CHANNELING, stack) > 0 && storm;
+		if (livingOwner instanceof ServerPlayer player) {
+			ComboSpecials.onTridentThrowHit(player, target, channeling);
+			HybridCombatManager.onTridentHit(player, target, trident.getUUID(), loyalty > 0);
+		}
+		if (!HybridCombatManager.config().pullEnabled() || loyalty <= 0 || pull <= 0) {
 			return;
 		}
-
-		if (!ControlGuard.tryApply(target, ControlGuard.Kind.PULL)) {
+		if (!lineOfSight(target, livingOwner) || !ControlGuard.tryApply(target, ControlGuard.Kind.PULL)) {
 			return;
 		}
-		int pullTicks = CombatRules.LOYALTY_PULL_BASE_TICKS + loyalty * CombatRules.LOYALTY_PULL_TICKS_PER_LEVEL;
-		int stunTicks = CombatRules.LOYALTY_STUN_BASE_TICKS + loyalty * CombatRules.LOYALTY_STUN_TICKS_PER_LEVEL;
-		double speed = CombatRules.LOYALTY_PULL_SPEED + loyalty * CombatRules.LOYALTY_PULL_SPEED_PER_LEVEL;
-		boolean pvp = target instanceof Player;
+		long now = level.getGameTime();
+		Long locked = PULL_LOCK.get(target.getUUID());
+		if (locked != null && now < locked) {
+			return;
+		}
+		PULL_LOCK.put(target.getUUID(), now + HybridCombatManager.config().pullResistance());
+		int pullTicks = HybridCombatManager.config().pullTicks(pull);
+		double speed = HybridCombatManager.config().pullSpeed(pull);
 		HOOKS.removeIf(hook -> hook.target == target || !hook.target.isAlive());
-		HOOKS.add(new Hook(target, livingOwner, pullTicks, pvp ? 0 : stunTicks, speed, pvp));
+		HOOKS.add(new Hook(target, livingOwner, pullTicks, 0, speed, true));
 		target.stopRiding();
 		ControlGuard.mark(target, ControlGuard.Kind.PULL);
-		if (pvp) {
-			ControlGuard.offBalance(target, livingOwner, CombatRules.TRIDENT_PVP_EXPOSE_TICKS);
-		} else {
-			applyStun(target, livingOwner, stunTicks);
-		}
 		if (livingOwner instanceof ServerPlayer player) {
-			ComboSpecials.onTridentPull(player, target);
+			HybridCombatManager.onPull(player, target);
 		}
-		level.playSound(null, target.getX(), target.getY(), target.getZ(), SoundEvents.TRIDENT_RETURN, SoundSource.PLAYERS, 0.8F, 0.65F);
-		level.sendParticles(ParticleTypes.ENCHANTED_HIT, target.getX(), target.getY(0.6), target.getZ(), 8, 0.2, 0.25, 0.2, 0.02);
+		level.playSound(null, target.getX(), target.getY(), target.getZ(), SoundEvents.TRIDENT_RETURN, SoundSource.PLAYERS, 0.55F, 0.9F);
+		level.sendParticles(ParticleTypes.ENCHANTED_HIT, target.getX(), target.getY(0.6), target.getZ(), 6, 0.15, 0.2, 0.15, 0.01);
+	}
+
+	public static void watchReturn(ThrownTrident trident) {
+		if (!(trident.level() instanceof ServerLevel) || !trident.isNoPhysics() || !(trident.getOwner() instanceof ServerPlayer player)) {
+			return;
+		}
+		ItemStack stack = tridentStack(trident);
+		if (ModEnchantments.level(trident.level(), Enchantments.LOYALTY, stack) <= 0 || player.distanceTo(trident) > 2.5) {
+			return;
+		}
+		UUID previous = RETURNED.put(trident.getUUID(), player.getUUID());
+		if (previous != null) {
+			return;
+		}
+		if (RETURNED.size() > 256) {
+			RETURNED.clear();
+			RETURNED.put(trident.getUUID(), player.getUUID());
+		}
+		ComboSpecials.onTridentReturn(player, trident.getUUID());
+		HybridCombatManager.onTridentReturn(player, trident.getUUID());
 	}
 
 	public static void drainWater(ThrownTrident trident) {

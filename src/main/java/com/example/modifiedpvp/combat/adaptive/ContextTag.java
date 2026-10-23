@@ -1,0 +1,21 @@
+package com.example.modifiedpvp.combat.adaptive;
+
+public enum ContextTag {
+	CHARGED,
+	SAME_TARGET,
+	BLOCKED,
+	PERFECT_TIMING,
+	PVP,
+	PVE,
+	WET,
+	STORM,
+	CHANNELING_VALID,
+	RIPTIDE,
+	LOYALTY,
+	CART_IGNITION,
+	ALLY_THREAT,
+	KINETIC,
+	FORMATION,
+	COUNTER,
+	FINISHER_DAMAGE
+}

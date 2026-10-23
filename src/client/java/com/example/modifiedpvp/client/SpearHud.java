@@ -47,7 +47,12 @@ public final class SpearHud {
 		}
 		int labelY = feedbackY + 6;
 		if (SpearClient.brokenTicks() > 0) {
-			Component label = Component.translatable(SpearClient.enhanced() ? "combat.modifiedpvp.spear.broken_enhanced" : "combat.modifiedpvp.spear.broken");
+			String key = switch (SpearClient.style()) {
+				case 2 -> "combat.modifiedpvp.spear.broken_kinetic";
+				case 3 -> "combat.modifiedpvp.spear.broken_formation";
+				default -> SpearClient.enhanced() ? "combat.modifiedpvp.spear.broken_enhanced" : "combat.modifiedpvp.spear.broken";
+			};
+			Component label = Component.translatable(key);
 			graphics.drawCenteredString(client.font, label, graphics.guiWidth() / 2, labelY, 0xFFE8C36A);
 			labelY += 10;
 		} else if (SpearClient.immune()) {

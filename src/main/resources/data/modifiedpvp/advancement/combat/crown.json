@@ -1,0 +1,27 @@
+{
+  "parent": "modifiedpvp:combat/root",
+  "criteria": {
+    "unlock": {
+      "trigger": "minecraft:impossible"
+    }
+  },
+  "display": {
+    "description": {
+      "translate": "advancements.modifiedpvp.combat.crown.description"
+    },
+    "frame": "challenge",
+    "icon": {
+      "count": 1,
+      "id": "modifiedpvp:crimson_crown"
+    },
+    "show_toast": true,
+    "announce_to_chat": true,
+    "title": "Technoblade Never Dies"
+  },
+  "requirements": [
+    [
+      "unlock"
+    ]
+  ],
+  "sends_telemetry_event": false
+}

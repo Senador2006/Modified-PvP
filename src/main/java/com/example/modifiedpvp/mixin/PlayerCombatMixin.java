@@ -8,6 +8,7 @@ import com.example.modifiedpvp.combat.ComboSpecials;
 import com.example.modifiedpvp.combat.ModEffects;
 import com.example.modifiedpvp.combat.MultiHit;
 import com.example.modifiedpvp.combat.SpearCombat;
+import com.example.modifiedpvp.combat.hybrid.HybridCombatManager;
 
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
@@ -62,6 +63,7 @@ public abstract class PlayerCombatMixin implements CombatantAccess {
 			this.modifiedpvp$hurtTracked.push(false);
 			return;
 		}
+		amount = HybridCombatManager.mitigate(player, source, amount);
 		if (SpearCombat.reapplyingGuard()) {
 			ComboSpecials.beginHurt(player);
 			this.modifiedpvp$hurtTracked.push(true);
@@ -132,12 +134,12 @@ public abstract class PlayerCombatMixin implements CombatantAccess {
 		if (fullyBlocked || !callback.getReturnValueZ() || amount <= 0.0F) {
 			return;
 		}
-		ComboSpecials.onDamaged(player);
+		ComboSpecials.onDamaged(player, source);
 	}
 
 	@Inject(method = "canCriticalAttack", at = @At("HEAD"), cancellable = true)
 	private void modifiedpvp$autoCrit(Entity target, CallbackInfoReturnable<Boolean> callback) {
-		if (target instanceof LivingEntity && ComboSpecials.autoCrit((Player) (Object) this)) {
+		if (target instanceof LivingEntity living && ComboSpecials.autoCrit((Player) (Object) this, living)) {
 			callback.setReturnValue(true);
 		}
 	}
@@ -178,8 +180,7 @@ public abstract class PlayerCombatMixin implements CombatantAccess {
 		if (this.modifiedpvp$attackScale >= CombatRules.COMBO_MIN_STRENGTH && player instanceof ServerPlayer server && target instanceof LivingEntity living
 				&& (living.getLastHurtByMob() == player && living.getLastHurtByMobTimestamp() == living.tickCount)
 				&& (living instanceof Mob || living instanceof Player)) {
-			ComboSpecials.onMeleeHit(server);
+			ComboSpecials.onMeleeHit(server, living, living.isBlocking());
 		}
-		CombatActions.strikeOffhand(player, target, this.modifiedpvp$attackScale);
 	}
 }

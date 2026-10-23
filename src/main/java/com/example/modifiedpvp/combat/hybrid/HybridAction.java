@@ -1,0 +1,19 @@
+package com.example.modifiedpvp.combat.hybrid;
+
+public enum HybridAction {
+	WEAPON_SWAP,
+	SWORD_HIT,
+	SWORD_THRUST,
+	AXE_HEAVY,
+	SHIELD_BLOCK,
+	TRIDENT_HIT,
+	TRIDENT_THROW,
+	TRIDENT_RETURN,
+	PULL,
+	MACE_HIT,
+	MACE_SMASH,
+	SPEAR_HIT,
+	CROSSBOW_ARROW,
+	CROSSBOW_FIREWORK,
+	GUARD_ADVANCE
+}

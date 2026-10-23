@@ -3,6 +3,10 @@ package com.example.modifiedpvp.combat;
 import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.List;
+import java.util.UUID;
+
+import com.example.modifiedpvp.combat.hybrid.HybridCombatManager;
+import com.example.modifiedpvp.combat.hybrid.HybridResult;
 
 import com.example.modifiedpvp.mixin.ProjectileWeaponInvoker;
 
@@ -18,6 +22,7 @@ import net.minecraft.world.entity.projectile.Projectile;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.component.ChargedProjectiles;
 import net.minecraft.world.level.ClipContext;
+import net.minecraft.world.phys.AABB;
 import net.minecraft.world.phys.BlockHitResult;
 import net.minecraft.world.phys.HitResult;
 import net.minecraft.world.phys.Vec3;
@@ -25,6 +30,7 @@ import net.minecraft.world.phys.Vec3;
 public final class CrossbowFeatures {
 	private static final ThreadLocal<ItemStack> SHOOTING = new ThreadLocal<>();
 	private static final ThreadLocal<Integer> VOLLEY = new ThreadLocal<>();
+	private static final ThreadLocal<UUID> SHOT = new ThreadLocal<>();
 	private static final List<Grapple> GRAPPLES = new ArrayList<>();
 
 	private CrossbowFeatures() {
@@ -33,11 +39,13 @@ public final class CrossbowFeatures {
 	public static void beginShot(ItemStack weapon) {
 		SHOOTING.set(weapon);
 		VOLLEY.remove();
+		SHOT.set(UUID.randomUUID());
 	}
 
 	public static void endShot() {
 		SHOOTING.remove();
 		VOLLEY.remove();
+		SHOT.remove();
 	}
 
 	public static void markProjectile(Projectile projectile) {
@@ -55,6 +63,10 @@ public final class CrossbowFeatures {
 				VOLLEY.set(volley);
 			}
 			access.modifiedpvp$setShotgunVolley(volley);
+		}
+		boolean grapple = projectile instanceof GrappleAccess access && access.modifiedpvp$isGrapple();
+		if (!grapple && SHOT.get() != null) {
+			HybridCombatManager.bindShot(projectile.getUUID(), SHOT.get());
 		}
 	}
 
@@ -86,6 +98,40 @@ public final class CrossbowFeatures {
 		}
 		weapon.set(DataComponents.CHARGED_PROJECTILES, ChargedProjectiles.of(loaded));
 		return true;
+	}
+
+	public static void onFireworkBurst(Projectile projectile) {
+		if (!(projectile.getOwner() instanceof net.minecraft.server.level.ServerPlayer player)) {
+			return;
+		}
+		if (projectile instanceof GrappleAccess access && access.modifiedpvp$isGrapple()) {
+			return;
+		}
+		if (!(projectile.level() instanceof ServerLevel level)) {
+			return;
+		}
+		AABB area = projectile.getBoundingBox().inflate(5.0);
+		LivingEntity focus = null;
+		int affected = 0;
+		double best = Double.MAX_VALUE;
+		for (var entity : level.getEntities(projectile, area, candidate -> candidate instanceof LivingEntity living && living.isAlive() && living != player)) {
+			LivingEntity living = (LivingEntity) entity;
+			if (living instanceof net.minecraft.world.entity.player.Player other && !player.canHarmPlayer(other)) {
+				continue;
+			}
+			affected++;
+			double distance = living.distanceToSqr(projectile);
+			if (distance < best) {
+				best = distance;
+				focus = living;
+			}
+		}
+		if (affected > 0 && projectile.getOwner() instanceof net.minecraft.server.level.ServerPlayer owner) {
+			HybridResult hybrid = HybridCombatManager.onCrossbowFirework(owner, focus, affected, projectile.getUUID());
+			if (!hybrid.exclusive()) {
+				ComboSpecials.onFireworkSplash(owner, focus, affected, false);
+			}
+		}
 	}
 
 	public static void onGrappleHit(Projectile projectile, HitResult hit) {
